@@ -1,0 +1,29 @@
+﻿<Window x:Class="WPGIS.LogMonitor.LogMonitor"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="LogMonitor" Height="600" Width="800" WindowStartupLocation="CenterScreen" Icon="Monitor.ico">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="368*" />
+            <RowDefinition Height="30" />
+        </Grid.RowDefinitions>       
+        <TextBox Name="textMain" HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto" TextWrapping="Wrap" SelectionBrush="Chartreuse" SelectionOpacity="0.4">
+            <TextBox.Background>
+                <RadialGradientBrush>
+                    <GradientStop Color="#FFFFF7E4" Offset="0" />
+                    <GradientStop Color="#FF00BED2" Offset="1" />
+                </RadialGradientBrush>
+            </TextBox.Background>
+        </TextBox>
+        <ToolBar Grid.Row="1" FlowDirection="RightToLeft" BorderThickness="0">
+            <Button Content="Clear" Width="200" BorderBrush="Yellow" Name="buttonClear" HorizontalAlignment="Center" VerticalAlignment="Center" Click="buttonClear_Click" />
+            <Button Content="测试" Visibility="Hidden" Width="200"  Name="buttonAdd" HorizontalAlignment="Center" VerticalAlignment="Center" Click="button1_Click" />
+            <ToolBar.Background>
+                <RadialGradientBrush>
+                    <GradientStop Color="#FFFFF7E4" Offset="0" />
+                    <GradientStop Color="#FF00BED2" Offset="1" />
+                </RadialGradientBrush>
+            </ToolBar.Background>
+        </ToolBar>
+    </Grid>
+</Window>

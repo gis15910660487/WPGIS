@@ -1,0 +1,79 @@
+﻿<UserControl x:Class="WPGIS.UCMapToolbar"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" mc:Ignorable="d" 
+             d:DesignHeight="45" d:DesignWidth="500">
+    <Grid>
+        <ToolBarTray Orientation="Horizontal">
+            <ToolBar>
+                <Button Name="btnDrawArrow" ToolTip="拖动部署箭头">
+                    <Image Source="/WPGIS;component/Images/arrow.png" Width="40" Height="40"/>
+                </Button>
+                <Button Name="btnSelectArrow" ToolTip="拾取箭头">
+                    <Image Name="imgSelectArrow" Source="/WPGIS;component/Images/CircleSelect.png" Width="40" Height="40"/>
+                </Button>
+                <Button Name="btnMoveArrow" ToolTip="移动当前选中箭头">
+                    <Image Source="/WPGIS;component/Images/RectSelect.png" Width="40" Height="40"/>
+                </Button>
+                <!--<Button Name="btnRotateArrow" ToolTip="旋转当前选中箭头">
+                    <Image Source="/WPGIS;component/Images/CircleSelect.png" Width="40" Height="40"/>
+                </Button>-->
+                <Button Name="btnEditArrow" ToolTip="编辑当前选中箭头">
+                    <Image Source="/WPGIS;component/Images/PolygonSelect.png" Width="40" Height="40"/>
+                </Button>
+                <Button Name="btnStopEdit" ToolTip="停止编辑">
+                    <Image Source="/WPGIS;component/Images/Pan.png" Width="40" Height="40"/>
+                </Button>
+                <Button Name="btnDeleteArrow" ToolTip="删除当前选中箭头">
+                    <Image Source="/WPGIS;component/Images/ClearTemp.png" Width="40" Height="40"/>
+                </Button>
+                <Button Name="btnFillColor" ToolTip="设置箭头填充色" Width="40" Height="30" Background="Red" Margin="5,0,0,0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#dd1144 "/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Rectangle Fill="{Binding ElementName=btnFillColor,Path=Background}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <Button Name="btnBorderColor" ToolTip="设置箭头边框色" Width="40" Height="30" Background="GreenYellow" Margin="10,0,0,0">
+                    <Button.Style>
+                        <Style TargetType="Button">
+                            <Setter Property="Background" Value="#dd1144 "/>
+                            <Style.Triggers>
+                                <Trigger Property="IsMouseOver" Value="True">
+                                    <Setter Property="Template">
+                                        <Setter.Value>
+                                            <ControlTemplate>
+                                                <Rectangle Fill="{Binding ElementName=btnBorderColor,Path=Background}"/>
+                                            </ControlTemplate>
+                                        </Setter.Value>
+                                    </Setter>
+                                </Trigger>
+                            </Style.Triggers>
+                        </Style>
+                    </Button.Style>
+                </Button>
+                <ToolBarPanel Height="46.4" VerticalAlignment="Stretch" Width="180" HorizontalAlignment="Stretch">
+                    <Slider x:Name="slider" Value="0" Maximum="360" Minimum="0" Margin="10,15,0,0" Width="180" ToolTip="旋转箭头" SmallChange="1"/>
+                </ToolBarPanel>
+                <ToolBarPanel VerticalAlignment="Stretch" HorizontalAlignment="Stretch" Width="100">
+                    <Label x:Name="degreeLabel" Content="0°" Margin="0,10,0,0" Width="100" FontSize="15"/>
+                </ToolBarPanel>
+
+            </ToolBar>
+        </ToolBarTray>
+
+    </Grid>
+
+</UserControl>
