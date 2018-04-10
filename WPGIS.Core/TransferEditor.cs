@@ -102,7 +102,7 @@ namespace WPGIS.Core
 
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
-            m_sceneView.MouseMove += sceneView_MouseMove;
+            m_sceneView.PreviewMouseMove += sceneView_MouseMove;
         }
         /// <summary>
         /// 初始化编辑器

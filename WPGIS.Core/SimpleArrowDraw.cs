@@ -192,7 +192,7 @@ namespace WPGIS.Core
         {
             if (m_needRefresh)
             {
-                refresh();
+                //refresh();
             }
         }
 
@@ -204,7 +204,8 @@ namespace WPGIS.Core
         {
             if (null == m_selectedCtrlPoint) return;
             m_selectedCtrlPoint.mapPosition = pnt;
-            m_needRefresh = true;
+            //m_needRefresh = true;
+            refresh();
         }
 
         /// <summary>
@@ -251,8 +252,8 @@ namespace WPGIS.Core
             m_controlPointManager.getControlPoint(5).mapPosition = pDes5;
             m_controlPointManager.getControlPoint(6).mapPosition = pDes6;
 
-            m_needRefresh = true;
-
+            //m_needRefresh = true;
+            refresh();
         }
         /// <summary>
         /// 开启旋转模式
