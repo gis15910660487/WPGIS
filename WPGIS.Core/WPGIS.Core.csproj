@@ -64,7 +64,6 @@
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RotateEditor.cs" />
     <Compile Include="SimpleArrowDraw.cs" />
-    <Compile Include="ToobarData.cs" />
     <Compile Include="TransferEditor.cs" />
     <Compile Include="WScene.cs" />
   </ItemGroup>

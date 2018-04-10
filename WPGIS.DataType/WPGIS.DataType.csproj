@@ -52,6 +52,7 @@
     <Compile Include="IDrawInterface.cs" />
     <Compile Include="IDrawMangerInterface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="ToobarData.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="packages.config" />
