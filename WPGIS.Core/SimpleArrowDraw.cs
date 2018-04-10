@@ -29,6 +29,8 @@ namespace WPGIS.Core
         private Color m_fillColor = Color.FromArgb(160, 255, 0, 0);
         private Color m_borderColor = Color.FromArgb(180, 0, 255, 0);
         private Color m_selectedColor = Color.FromArgb(255, 0, 255, 255);
+        private int m_defaultBorderSize = 1;
+        private int m_focusBorderSize = 3;
 
         //箭头位置
         private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
@@ -112,6 +114,16 @@ namespace WPGIS.Core
                 return ctrlPnt.mapPosition;
             }
         }
+        /// <summary>
+        /// xy平面旋转角度
+        /// </summary>
+        public double angleOnXY
+        {
+            get
+            {
+                return m_rotOnXY;
+            }
+        }
 
         public bool selected
         {
@@ -125,10 +137,12 @@ namespace WPGIS.Core
                 if (m_isSelected)
                 {
                     m_fillSymbol.Outline.Color = m_selectedColor;
+                    m_fillSymbol.Outline.Width = m_focusBorderSize;
                 }
                 else
                 {
                     m_fillSymbol.Outline.Color = m_borderColor;
+                    m_fillSymbol.Outline.Width = m_defaultBorderSize;
                 }
             }
         }
@@ -270,6 +284,14 @@ namespace WPGIS.Core
         public void rotateOnXY(double delta, bool focusRefresh)
         {
             m_rotOnXY += delta;
+            if(m_rotOnXY >= 2 * Math.PI)
+            {
+                m_rotOnXY = m_rotOnXY - 2 * Math.PI;
+            }
+            else if(m_rotOnXY < 0.0)
+            {
+                m_rotOnXY = 2 * Math.PI - m_rotOnXY;
+            }
             //旋转所有的控制点
             int iCtrlPntSize = m_controlPointManager.getSize();
             for (int i = 0; i < iCtrlPntSize; i++)

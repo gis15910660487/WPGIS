@@ -54,6 +54,10 @@ namespace WPGIS.DataType
         /// 边框颜色
         /// </summary>
         Color borderColor { get; set; }
+        /// <summary>
+        /// xy平面旋转角度
+        /// </summary>
+        double angleOnXY { get;}
 
         /// <summary>
         /// 初始化几何体

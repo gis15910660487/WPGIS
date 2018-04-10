@@ -216,6 +216,11 @@ namespace WPGIS.Core
         /// <param name="snPnt">屏幕坐标</param>        
         public async void pointSelectDraw(ScreenPoint hintPnt)
         {
+            if(m_editDraw != null)
+            {
+                m_editDraw.selected = false;
+            }
+
             var tolerance = 10d;
             var maximumResults = 3;
             var onlyReturnPopups = false;

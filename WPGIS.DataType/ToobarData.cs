@@ -86,7 +86,7 @@ namespace WPGIS.DataType
                 }
             }
         }
-        
+
         private double m_rotateAngle = 0.0;
         /// <summary>
         /// 箭头角度(单位度)

@@ -42,11 +42,26 @@ namespace WPGIS
 
             btnFillColor.Click += btnFillColor_Click;
             btnBorderColor.Click += btnBorderColor_Click;
-            DrawManager.getInst().CurrentArrowChangedEvent += UCMapToolbar_CurrentArrowChangedEvent;
+            DrawManager.getInst().CurrentArrowChangedEvent += UCMapToolbar_CurrentArrowChangedEvent;            
 
             //初始化工具条数据
             m_toolbarData = new ToobarData(DrawManager.getInst());
             this.DataContext = m_toolbarData;
+        }
+
+        private void btnBorderColor_Click(object sender, RoutedEventArgs e)
+        {
+            SolidColorBrush curBrush = borderPath.Stroke as SolidColorBrush;
+            Color borderColor = curBrush.Color;
+            System.Windows.Forms.ColorDialog colorDialog = new System.Windows.Forms.ColorDialog();
+            colorDialog.Color = System.Drawing.Color.FromArgb(borderColor.A, borderColor.R, borderColor.G, borderColor.B);
+            if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
+            {
+                System.Drawing.SolidBrush sb = new System.Drawing.SolidBrush(colorDialog.Color);
+                Color newColor = Color.FromArgb(borderColor.A, sb.Color.R, sb.Color.G, sb.Color.B);
+                SolidColorBrush solidColorBrush = new SolidColorBrush(newColor);
+                m_toolbarData.BorderColor = solidColorBrush;
+            }
         }
 
         private void UCMapToolbar_CurrentArrowChangedEvent(IDrawInterface draw)
@@ -58,21 +73,8 @@ namespace WPGIS
             else
             {
                 m_toolbarData.HasCurrentArrow = true;
-            }
-        }
-
-        private void btnBorderColor_Click(object sender, RoutedEventArgs e)
-        {
-            SolidColorBrush curBrush = btnBorderColor.Background as SolidColorBrush;
-            Color borderColor = curBrush.Color;
-            System.Windows.Forms.ColorDialog colorDialog = new System.Windows.Forms.ColorDialog();
-            colorDialog.Color = System.Drawing.Color.FromArgb(borderColor.A, borderColor.R, borderColor.G, borderColor.B);
-            if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
-            {
-                System.Drawing.SolidBrush sb = new System.Drawing.SolidBrush(colorDialog.Color);
-                Color newColor = Color.FromArgb(borderColor.A, sb.Color.R, sb.Color.G, sb.Color.B);
-                SolidColorBrush solidColorBrush = new SolidColorBrush(newColor);
-                m_toolbarData.BorderColor = solidColorBrush;
+                m_toolbarData.BorderColor = new SolidColorBrush(draw.borderColor);
+                m_toolbarData.FillColor = new SolidColorBrush(draw.fillColor);                
             }
         }
 
