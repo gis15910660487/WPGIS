@@ -126,6 +126,10 @@ namespace WPGIS.Core
             double tValue = (p1.X - p2.X)* (p1.X - p2.X) + (p1.Y - p2.Y)*(p1.Y - p2.Y);
             return Math.Sqrt(tValue);
         }
+        public double CrossValue(Vector2D vec1, Vector2D vec2)
+        {
+            return vec1.X * vec2.Y - vec1.Y * vec2.X;
+        }
 
         /// <summary>
         /// 米转度

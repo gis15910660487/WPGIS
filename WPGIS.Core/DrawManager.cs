@@ -101,6 +101,9 @@ namespace WPGIS.Core
             }
             m_editDraw = draw;
             m_editDraw.startMove();
+            //触发当前箭头改变事件
+            CurrentArrowChangedEvent?.Invoke(m_editDraw);
+
             m_transferEditor.setVisible(true);
             MapPoint cpPnt = m_editDraw.mapPosition;
             MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z, cpPnt.SpatialReference);
@@ -121,13 +124,15 @@ namespace WPGIS.Core
             {
                 m_editDraw.stopAll();
             }
-            m_editDraw = draw;
+            m_editDraw = draw;           
             if (m_editDraw != null)
             {
                 m_editDraw.startEdit();
                 m_editType = Edit_Type.Edit_Geometry;
                 m_editDraw.selectCtrlPointEvent += editDraw_selectCtrlPointEvent;
             }
+            //触发当前箭头改变事件
+            CurrentArrowChangedEvent?.Invoke(m_editDraw);
         }
 
         /// <summary>
@@ -148,6 +153,8 @@ namespace WPGIS.Core
             MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z, cpPnt.SpatialReference);
             m_rotateEditor.setPosition(tePnt);
             m_editType = Edit_Type.Edit_Rotate;
+            //触发当前箭头改变事件
+            CurrentArrowChangedEvent?.Invoke(m_editDraw);
         }
 
         public void stopEdit()
@@ -172,6 +179,8 @@ namespace WPGIS.Core
                 {
                     m_editDraw = null;
                     m_transferEditor.setVisible(false);
+                    //触发当前箭头改变事件
+                    CurrentArrowChangedEvent?.Invoke(null);
                 }
                 m_draws.Remove(draw);
                 draw.Dispose();
@@ -248,7 +257,7 @@ namespace WPGIS.Core
             if (m_editDraw == null) return;
             if (type == Rotate_Type.Rotate_XY)
             {
-                m_editDraw.rotateOnXY(angle, false);
+                m_editDraw.rotateOnXY(angle, true);
             }
         }
         private async void sceneView_MouseDoubleClick(object sender, System.Windows.Input.MouseButtonEventArgs e)
@@ -280,6 +289,9 @@ namespace WPGIS.Core
             {
                 m_editDraw = findDraw(identifyResults.Graphics[0]);
                 startEdit(m_editDraw);
+
+                //触发当前箭头改变事件
+                CurrentArrowChangedEvent?.Invoke(m_editDraw);
             }
         }
         private void editDraw_selectCtrlPointEvent(IControlPoint cpnt)

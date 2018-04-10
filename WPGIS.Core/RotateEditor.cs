@@ -79,8 +79,8 @@ namespace WPGIS.Core
         private double m_angleDetltaTotal = 0.0;
         //一次旋转角度偏移(有正负)
         private double m_angleDetltaOneRotate = 0.0;
-        //上一帧方向向量
-        private Vector2D m_preVector;
+        //上一帧屏幕位置
+        private ScreenPoint m_preScreenPoint;
 
         public RotateEditor(SceneView sceView)
         {
@@ -104,7 +104,7 @@ namespace WPGIS.Core
 
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
-            m_sceneView.MouseMove += sceneView_MouseMove;
+            m_sceneView.PreviewMouseMove += sceneView_MouseMove;
         }
         /// <summary>
         /// 刷新
@@ -314,11 +314,8 @@ namespace WPGIS.Core
                     {
                         m_xyCircleSymbol.Color = m_focusColor;
                         m_rotateType = Rotate_Type.Rotate_XY;
-                        //计算起始角度
-                        ScreenPoint centerSnPoint = m_sceneView.LocationToScreen(m_pos);
-                        Vector2D vec1 = new Vector2D(1, 0);
-                        m_preVector = new Vector2D(screenPnt.X - centerSnPoint.X, screenPnt.Y - centerSnPoint.Y);
-                        m_rotateBeginAngle = CommonUtil.getInst().getAngle2D(vec1, m_preVector);
+                        //记录起始屏幕位置
+                        m_preScreenPoint = screenPnt;
                     }
                 }
 
@@ -337,24 +334,22 @@ namespace WPGIS.Core
         {
             try
             {
-                ScreenPoint centerSnPos = m_sceneView.LocationToScreen(m_pos);
-                Vector2D vec2 = new Vector2D(hintPnt.X - centerSnPos.X, hintPnt.Y - centerSnPos.Y);
-                double curAngle = CommonUtil.getInst().getAngle2D(m_preVector, vec2);
-                Vector2D vec3 = vec2 - m_preVector;
-                double dot = m_preVector.Dot(vec3);
-                if(dot > 0.0)
-                {
-                    m_angleDetltaOneRotate = (-curAngle);
-                }
-                else if(dot < 0.0)
+                ScreenPoint centerPos = m_sceneView.LocationToScreen(m_pos);
+                Vector2D vec1 = new Vector2D(m_preScreenPoint.X - centerPos.X, m_preScreenPoint.Y - centerPos.Y);
+                Vector2D vec2 = new Vector2D(hintPnt.X - centerPos.X, hintPnt.Y - centerPos.Y);
+                double curAngle = CommonUtil.getInst().getAngle2D(vec1, vec2)/10;
+                
+                Vector2D vec3 = new Vector2D(hintPnt.X - m_preScreenPoint.X, hintPnt.Y - m_preScreenPoint.Y);               
+                double dot = CommonUtil.getInst().CrossValue(vec1, vec3);
+                if (dot > 0.0)
                 {
                     m_angleDetltaOneRotate = curAngle;
                 }
+                else if (dot < 0.0)
+                {
+                    m_angleDetltaOneRotate = -curAngle;
+                }
 
-                m_angleDetltaTotal += m_angleDetltaOneRotate;
-                m_preVector = vec2;
-
-                m_refreshType = 2;
                 //触发位置改变事件
                 RotateChangedEvent?.Invoke(Rotate_Type.Rotate_XY, m_angleDetltaOneRotate);
             }
@@ -372,6 +367,7 @@ namespace WPGIS.Core
             }
             else if (m_rotateType == Rotate_Type.Rotate_XY)
             {
+                Log.LogManager.AddLog("sceneView_MouseMove");
                 rotate(e.GetPosition(m_sceneView));
             }
         }
@@ -380,7 +376,7 @@ namespace WPGIS.Core
             if (!m_isVisible || m_sceneView == null) return;
             if (m_rotateType == Rotate_Type.Rotate_None) return;
             m_rotateType = Rotate_Type.Rotate_None;
-
+            Log.LogManager.AddLog("sceneView_MouseLeftButtonUp");
             m_rotateBeginAngle = 0.0;
             m_angleDetltaTotal = 0.0;
             m_angleDetltaOneRotate = 0.0;
