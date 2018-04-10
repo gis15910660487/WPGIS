@@ -14,7 +14,7 @@ namespace WPGIS.Core
     /// <summary>
     /// 标绘管理器
     /// </summary>
-    public class DrawManager
+    public class DrawManager : IDrawMangerInterface
     {
         private SceneView m_sceneView = null;
         private GraphicsOverlay m_gpOverlay = null;
@@ -23,6 +23,8 @@ namespace WPGIS.Core
         private RotateEditor m_rotateEditor = null;
         private Edit_Type m_editType = Edit_Type.Edit_None;
         private IList<IDrawInterface> m_draws = new List<IDrawInterface>();
+        //当前箭头改变事件
+        public event CurrentArrowChangedEventHandler CurrentArrowChangedEvent = null;
 
         private static readonly DrawManager instance = new DrawManager();
         /// <summary>
@@ -154,6 +156,8 @@ namespace WPGIS.Core
             {
                 m_editDraw.stopAll();
                 m_editDraw = null;
+                //触发当前箭头改变事件
+                CurrentArrowChangedEvent?.Invoke(null);
             }
             m_transferEditor.setVisible(false);
             m_rotateEditor.setVisible(false);
@@ -220,6 +224,8 @@ namespace WPGIS.Core
                 if(m_editDraw != null)
                 {
                     m_editDraw.selected = true;
+                    //触发当前箭头改变事件
+                    CurrentArrowChangedEvent?.Invoke(m_editDraw);
                 }
             }
         }

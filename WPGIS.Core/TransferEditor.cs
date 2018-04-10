@@ -31,7 +31,7 @@ namespace WPGIS.Core
         bool m_isVisible = false;
         int m_refreshType = 0;
 
-        public event MapPointChangedEventHandler MapPointChangedEvent;
+        public event MapPointChangedEventHandler MapPointChangedEvent = null;
         //编辑器位置
         private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
         //编辑器xy平面旋转角度（弧度）             

@@ -1,5 +1,4 @@
 ﻿
-using WPGIS.Log;
 using WPGIS.Core;
 using WPGIS.DataType;
 using System.Windows;
@@ -8,7 +7,6 @@ using Esri.ArcGISRuntime.UI.Controls;
 
 using ScreenPoint = System.Windows.Point;
 using Esri.ArcGISRuntime.Geometry;
-using System.Threading;
 using System;
 using System.Windows.Media;
 
@@ -24,6 +22,7 @@ namespace WPGIS
         private bool m_isCreateArrow = false;        //创建箭头状态
         private SceneView m_sceneView = null;
         private SimpleArrowDraw m_arrowDraw = null;
+        private ToobarData m_toolbarData = null;
 
         /// <summary>
         /// 地图工具条
@@ -40,19 +39,32 @@ namespace WPGIS
             //btnRotateArrow.Click += btnRotateArrow_Click;
             btnStopEdit.Click += btnStopEdit_Click;
             slider.ValueChanged += slider_ValueChanged;
-            btnFillColor.Background = new SolidColorBrush(Color.FromArgb(160, 255, 0, 0));
-            btnBorderColor.Background = new SolidColorBrush(Color.FromArgb(255, 0, 255, 0));
 
             btnFillColor.Click += btnFillColor_Click;
             btnBorderColor.Click += btnBorderColor_Click;
+            DrawManager.getInst().CurrentArrowChangedEvent += UCMapToolbar_CurrentArrowChangedEvent;
+
+            //初始化工具条数据
+            m_toolbarData = new ToobarData(DrawManager.getInst());
+            this.DataContext = m_toolbarData;
+        }
+
+        private void UCMapToolbar_CurrentArrowChangedEvent(IDrawInterface draw)
+        {
+            if(draw == null)
+            {
+                m_toolbarData.HasCurrentArrow = false;
+            }
+            else
+            {
+                m_toolbarData.HasCurrentArrow = true;
+            }
         }
 
         private void btnBorderColor_Click(object sender, RoutedEventArgs e)
         {
-            IDrawInterface curDraw = DrawManager.getInst().getCurrentDraw();
-            if (null == curDraw) return;
-
-            Color borderColor = curDraw.borderColor;
+            SolidColorBrush curBrush = btnBorderColor.Background as SolidColorBrush;
+            Color borderColor = curBrush.Color;
             System.Windows.Forms.ColorDialog colorDialog = new System.Windows.Forms.ColorDialog();
             colorDialog.Color = System.Drawing.Color.FromArgb(borderColor.A, borderColor.R, borderColor.G, borderColor.B);
             if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -60,18 +72,14 @@ namespace WPGIS
                 System.Drawing.SolidBrush sb = new System.Drawing.SolidBrush(colorDialog.Color);
                 Color newColor = Color.FromArgb(borderColor.A, sb.Color.R, sb.Color.G, sb.Color.B);
                 SolidColorBrush solidColorBrush = new SolidColorBrush(newColor);
-                btnBorderColor.Background = solidColorBrush;
-
-                curDraw.borderColor = newColor;
+                m_toolbarData.BorderColor = solidColorBrush;
             }
         }
 
         private void btnFillColor_Click(object sender, RoutedEventArgs e)
         {
-            IDrawInterface curDraw = DrawManager.getInst().getCurrentDraw();
-            if (null == curDraw) return;
-
-            Color fillColor = curDraw.fillColor;
+            SolidColorBrush curBrush = btnFillColor.Background as SolidColorBrush;
+            Color fillColor = curBrush.Color;
             System.Windows.Forms.ColorDialog colorDialog = new System.Windows.Forms.ColorDialog();
             colorDialog.Color = System.Drawing.Color.FromArgb(fillColor.A, fillColor.R, fillColor.G, fillColor.B);
             if (colorDialog.ShowDialog() == System.Windows.Forms.DialogResult.OK)
@@ -79,9 +87,7 @@ namespace WPGIS
                 System.Drawing.SolidBrush sb = new System.Drawing.SolidBrush(colorDialog.Color);
                 Color newColor = Color.FromArgb(fillColor.A, sb.Color.R, sb.Color.G, sb.Color.B);
                 SolidColorBrush solidColorBrush = new SolidColorBrush(newColor);
-                btnFillColor.Background = solidColorBrush;
-
-                curDraw.fillColor = newColor;
+                m_toolbarData.FillColor = solidColorBrush;
             }
         }
 

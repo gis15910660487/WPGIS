@@ -17,6 +17,10 @@ namespace WPGIS.DataType
     /// <param name="type">旋转类型</param>
     /// <param name="angle">角度（弧度）</param>
     public delegate void RotateChangedEventHandler(Rotate_Type type, double angle);
+    /// <summary>
+    /// 当前箭头改变事件
+    /// </summary>
+    public delegate void CurrentArrowChangedEventHandler(IDrawInterface draw);
 
     /// <summary>
     /// 旋转类型

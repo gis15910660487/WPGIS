@@ -37,7 +37,7 @@ namespace WPGIS.Core
         private const int m_subPointCount = 101;
 
         //旋转改变事件
-        public event RotateChangedEventHandler RotateChangedEvent;
+        public event RotateChangedEventHandler RotateChangedEvent = null;
         //编辑器位置
         private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
         private MapPoint m_oldPos = null;

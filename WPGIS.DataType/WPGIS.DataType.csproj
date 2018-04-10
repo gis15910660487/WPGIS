@@ -50,6 +50,7 @@
     <Compile Include="CommonType.cs" />
     <Compile Include="IControlPoint.cs" />
     <Compile Include="IDrawInterface.cs" />
+    <Compile Include="IDrawMangerInterface.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>
