@@ -123,6 +123,11 @@ namespace WPGIS.Core
             {
                 return m_rotOnXY;
             }
+            set
+            {
+                rotateOnXY(value - m_rotOnXY, true);
+                m_rotOnXY = value;
+            }
         }
 
         public bool selected

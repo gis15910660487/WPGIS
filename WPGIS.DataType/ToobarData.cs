@@ -1,6 +1,7 @@
 ﻿
 using System.Windows.Media;
 using System.ComponentModel;
+using System;
 
 namespace WPGIS.DataType
 {
@@ -103,6 +104,10 @@ namespace WPGIS.DataType
                 if (PropertyChanged != null)
                 {
                     this.PropertyChanged.Invoke(this, new PropertyChangedEventArgs("RotateAngle"));
+                }
+                if (m_drawManager != null && m_drawManager.getCurrentDraw() != null)
+                {
+                    m_drawManager.getCurrentDraw().angleOnXY = m_rotateAngle * 2 * Math.PI / 360;
                 }
             }
         }

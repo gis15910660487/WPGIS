@@ -38,7 +38,7 @@ namespace WPGIS
             btnDrawArrow.Click += btnDrawArrow_Click;
             //btnRotateArrow.Click += btnRotateArrow_Click;
             btnStopEdit.Click += btnStopEdit_Click;
-            slider.ValueChanged += slider_ValueChanged;
+            //slider.ValueChanged += slider_ValueChanged;
 
             btnFillColor.Click += btnFillColor_Click;
             btnBorderColor.Click += btnBorderColor_Click;
@@ -74,7 +74,8 @@ namespace WPGIS
             {
                 m_toolbarData.HasCurrentArrow = true;
                 m_toolbarData.BorderColor = new SolidColorBrush(draw.borderColor);
-                m_toolbarData.FillColor = new SolidColorBrush(draw.fillColor);                
+                m_toolbarData.FillColor = new SolidColorBrush(draw.fillColor);
+                m_toolbarData.RotateAngle = draw.angleOnXY * 360 / (2 * Math.PI);
             }
         }
 
@@ -92,18 +93,7 @@ namespace WPGIS
                 m_toolbarData.FillColor = solidColorBrush;
             }
         }
-
-        private void slider_ValueChanged(object sender, RoutedPropertyChangedEventArgs<double> e)
-        {
-            IDrawInterface curDraw = DrawManager.getInst().getCurrentDraw();
-            if (curDraw != null)
-            {
-                double angle = (Math.PI * 2) * (e.NewValue - e.OldValue) / 360;
-                curDraw.rotateOnXY(angle, true);
-            }
-            degreeLabel.Content = slider.Value.ToString("0.") + "°";
-        }
-
+        
         private void btnStopEdit_Click(object sender, RoutedEventArgs e)
         {
             cancelDrawArrow();

@@ -57,7 +57,7 @@ namespace WPGIS.DataType
         /// <summary>
         /// xy平面旋转角度
         /// </summary>
-        double angleOnXY { get;}
+        double angleOnXY { get; set; }
 
         /// <summary>
         /// 初始化几何体
