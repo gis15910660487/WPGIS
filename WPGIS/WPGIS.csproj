@@ -76,7 +76,6 @@
       <Generator>MSBuild:Compile</Generator>
       <SubType>Designer</SubType>
     </ApplicationDefinition>
-    <Compile Include="TestFunc.cs" />
     <Compile Include="UCMapToolbar.xaml.cs">
       <DependentUpon>UCMapToolbar.xaml</DependentUpon>
     </Compile>

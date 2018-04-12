@@ -13,7 +13,7 @@
             <RowDefinition Height="50" />
             <RowDefinition Height="*" />
         </Grid.RowDefinitions>
-        <esri:SceneView x:Name="MySceneView" Margin="0" Grid.Row="1"/>
+        <esri:SceneView x:Name="MySceneView" Margin="0" Grid.Row="1" Scene="{Binding scene}"/>
         <local:UCMapToolbar x:Name="MapToolbar" Grid.Row="0" Margin="0"/>
 
     </Grid>

@@ -14,7 +14,7 @@ namespace WPGIS.Core
     /// <summary>
     /// 标绘管理器
     /// </summary>
-    public class DrawManager : IDrawMangerInterface
+    public class DrawManager
     {
         private SceneView m_sceneView = null;
         private GraphicsOverlay m_gpOverlay = null;
