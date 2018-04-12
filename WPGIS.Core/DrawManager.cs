@@ -54,7 +54,7 @@ namespace WPGIS.Core
 
             m_transferEditor = new TransferEditor(m_sceneView);
             m_transferEditor.initEditor();
-            m_transferEditor.setVisible(false);
+            m_transferEditor.visible = false;
             m_transferEditor.MapPointChangedEvent += transferEditor_MapPointChangedEvent;
 
             m_rotateEditor = new RotateEditor(m_sceneView);
@@ -104,7 +104,7 @@ namespace WPGIS.Core
             //触发当前箭头改变事件
             CurrentArrowChangedEvent?.Invoke(m_editDraw);
 
-            m_transferEditor.setVisible(true);
+            m_transferEditor.visible = true;
             MapPoint cpPnt = m_editDraw.mapPosition;
             MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z, cpPnt.SpatialReference);
             m_transferEditor.setPosition(tePnt);
@@ -118,7 +118,7 @@ namespace WPGIS.Core
         public void startEdit(IDrawInterface draw)
         {
             m_rotateEditor.setVisible(false);
-            m_transferEditor.setVisible(false);
+            m_transferEditor.visible = false;
             
             if (m_editDraw != null)
             {
@@ -141,7 +141,7 @@ namespace WPGIS.Core
         /// <param name="draw"></param>
         public void startRotate(IDrawInterface draw)
         {
-            m_transferEditor.setVisible(false);
+            m_transferEditor.visible = false;
             if (m_editDraw != null)
             {
                 m_editDraw.stopAll();
@@ -166,7 +166,7 @@ namespace WPGIS.Core
                 //触发当前箭头改变事件
                 CurrentArrowChangedEvent?.Invoke(null);
             }
-            m_transferEditor.setVisible(false);
+            m_transferEditor.visible = false;
             m_rotateEditor.setVisible(false);
             m_editType = Edit_Type.Edit_None;
         }
@@ -178,7 +178,7 @@ namespace WPGIS.Core
                 if (draw == m_editDraw)
                 {
                     m_editDraw = null;
-                    m_transferEditor.setVisible(false);
+                    m_transferEditor.visible = false;
                     //触发当前箭头改变事件
                     CurrentArrowChangedEvent?.Invoke(null);
                 }
@@ -238,6 +238,14 @@ namespace WPGIS.Core
                 if(m_editDraw != null)
                 {
                     m_editDraw.selected = true;
+
+                    if(m_transferEditor.visible)
+                    {
+                        MapPoint cpPnt = m_editDraw.mapPosition;
+                        MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z, cpPnt.SpatialReference);
+                        m_transferEditor.setPosition(tePnt);
+                    }
+
                     //触发当前箭头改变事件
                     CurrentArrowChangedEvent?.Invoke(m_editDraw);
                 }
@@ -272,7 +280,7 @@ namespace WPGIS.Core
                 m_editDraw.stopAll();
                 m_editType = Edit_Type.Edit_None;
                 m_editDraw.selectCtrlPointEvent -= editDraw_selectCtrlPointEvent;
-                m_transferEditor.setVisible(false);
+                m_transferEditor.visible = false;
             }
 
             //查找绘制对象
@@ -304,7 +312,7 @@ namespace WPGIS.Core
             MapPoint cpPnt = cpnt.mapPosition;
             MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z + 10, cpPnt.SpatialReference);
             m_transferEditor.setPosition(tePnt);
-            m_transferEditor.setVisible(true);
+            m_transferEditor.visible = true;
         }
         private IDrawInterface findDraw(Graphic pGraphic)
         {

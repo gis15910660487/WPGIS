@@ -92,7 +92,7 @@ namespace WPGIS.Core
             m_focusColor = Color.FromArgb(200, 255, 255, 0);
 
             initEditor();
-            setVisible(false);
+            visible = false;
 
             m_globeCameraControl = m_sceneView.CameraController as GlobeCameraController;
             m_orbitCameraController = new OrbitGeoElementCameraController(m_spereGraphic, 20.0)
@@ -103,6 +103,29 @@ namespace WPGIS.Core
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
             m_sceneView.PreviewMouseMove += sceneView_MouseMove;
+        }
+
+        /// <summary>
+        /// 可见性
+        /// </summary>
+        public bool visible
+        {
+            get
+            {
+                return m_isVisible;
+            }
+            set
+            {
+                if (value == m_isVisible) return;
+                m_isVisible = value;
+                m_spereGraphic.IsVisible = m_isVisible;
+                m_xAxisGraphic.IsVisible = m_isVisible;
+                m_yAxisGraphic.IsVisible = m_isVisible;
+                m_zAxisGraphic.IsVisible = m_isVisible;
+                m_xAxiMarkGraphic.IsVisible = m_isVisible;
+                m_yAxiMarkGraphic.IsVisible = m_isVisible;
+                m_zAxiMarkGraphic.IsVisible = m_isVisible;
+            }
         }
         /// <summary>
         /// 初始化编辑器
@@ -205,23 +228,7 @@ namespace WPGIS.Core
             };
             m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_scale), m_zAxisMarkSymbol);
             m_gpOverlay1.Graphics.Add(m_zAxiMarkGraphic);
-        }
-        /// <summary>
-        /// 设置可见性
-        /// </summary>
-        /// <param name="vis"></param>
-        public void setVisible(bool vis)
-        {
-            if (vis == m_isVisible) return;
-            m_isVisible = vis;
-            m_spereGraphic.IsVisible = m_isVisible;
-            m_xAxisGraphic.IsVisible = m_isVisible;
-            m_yAxisGraphic.IsVisible = m_isVisible;
-            m_zAxisGraphic.IsVisible = m_isVisible;
-            m_xAxiMarkGraphic.IsVisible = m_isVisible;
-            m_yAxiMarkGraphic.IsVisible = m_isVisible;
-            m_zAxiMarkGraphic.IsVisible = m_isVisible;
-        }
+        }        
         /// <summary>
         /// 设置位置
         /// </summary>

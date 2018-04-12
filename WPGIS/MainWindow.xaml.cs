@@ -18,6 +18,6 @@ namespace WPGIS
             MapToolbar.DataContext = new ToolbarViewModel(MySceneView);
         }
 
-        // Map initialization logic is contained in MapViewModel.cs
+        // Map initialization logic is contained in SceneViewModel.cs
     }
 }

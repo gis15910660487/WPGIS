@@ -163,7 +163,7 @@ namespace WPGIS.Core
             {
                 m_model.RotateAngle = value;
                 RaisePropertyChanged("RotateAngle");
-                AngleString = m_model.RotateAngle + "°";
+                AngleString = m_model.RotateAngle.ToString("0") + "°";
 
                 if (DrawManager.getInst().getCurrentDraw() != null)
                 {
