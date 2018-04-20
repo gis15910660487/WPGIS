@@ -23,8 +23,9 @@ namespace WPGIS.Core
     public class RotateEditor
     {
         private Color m_xyCircleColor;              //xy平面圆环颜色
-        private Color m_yzCircleColor;              //yz平面圆环颜色
-        private Color m_xzCircleColor;              //xz平面圆环颜色
+        private Color m_xAxisColor;
+        private Color m_yAxisColor;
+        private Color m_zAxisColor;
         private Color m_activeColor;                //圆环激活颜色
         private Color m_focusColor;                 //圆环focus颜色
         private Color m_rotatePolyColor;            //旋转多边形颜色
@@ -48,20 +49,38 @@ namespace WPGIS.Core
         //编辑存储的要素层
         private GraphicsOverlay m_gpOverlayLine = null;
         private GraphicsOverlay m_gpOverlayFill = null;
+        private GraphicsOverlay m_gpOverlay = null;
         //xy平面圆环
         private Graphic m_xyCircleGraphic = null;
-        //yz平面圆环
-        private Graphic m_yzCircleGraphic = null;
-        //xz平面圆环
-        private Graphic m_xzCircleGraphic = null;
+        //x轴
+        private Graphic m_xAxisGraphic = null;
+        //y轴
+        private Graphic m_yAxisGraphic = null;
+        //z轴
+        private Graphic m_zAxisGraphic = null;
+        //x轴头部
+        private Graphic m_xAxiMarkGraphic = null;
+        //y轴头部
+        private Graphic m_yAxiMarkGraphic = null;
+        //z轴头部
+        private Graphic m_zAxiMarkGraphic = null;
+
         //旋转多边形
         private Graphic m_rotatePolygonGraphic = null;
         //xy平面渲染符号
         private SimpleLineSymbol m_xyCircleSymbol = null;
-        //yz平面渲染符号
-        private SimpleLineSymbol m_yzCircleSymbol = null;
-        //xz平面渲染符号
-        private SimpleLineSymbol m_xzCircleSymbol = null;
+        //x轴头部渲染符号
+        private SimpleMarkerSceneSymbol m_xAxisMarkSymbol = null;
+        //y轴头部渲染符号
+        private SimpleMarkerSceneSymbol m_yAxisMarkSymbol = null;
+        //z轴头部渲染符号
+        private SimpleMarkerSceneSymbol m_zAxisMarkSymbol = null;
+        //x轴渲染符号
+        private SimpleLineSymbol m_xAxisSymbol = null;
+        //y轴渲染符号
+        private SimpleLineSymbol m_yAxisSymbol = null;
+        //z轴渲染符号
+        private SimpleLineSymbol m_zAxisSymbol = null;
         //旋转多边形符号
         private SimpleFillSymbol m_rotatePolygonSymbol = null;
         //当前旋转类型
@@ -88,8 +107,9 @@ namespace WPGIS.Core
             m_rotatePolyColor = Color.FromArgb(128, 255, 255, 0);
             m_rotatePolyBorderColor = Color.FromArgb(200, 255, 255, 0);
             m_xyCircleColor = Color.FromArgb(255, 255, 0, 0);
-            m_yzCircleColor = Color.FromArgb(255, 0, 255, 0);
-            m_xzCircleColor = Color.FromArgb(255, 0, 0, 255);
+            m_xAxisColor = Color.FromArgb(255, 255, 0, 0);
+            m_yAxisColor = Color.FromArgb(255, 0, 255, 0);
+            m_zAxisColor = Color.FromArgb(255, 0, 0, 255);
             m_activeColor = Color.FromArgb(128, 255, 255, 0);
             m_focusColor = Color.FromArgb(200, 255, 255, 0);
 
@@ -125,6 +145,9 @@ namespace WPGIS.Core
             m_gpOverlayFill = new GraphicsOverlay();
             m_gpOverlayFill.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
             m_sceneView.GraphicsOverlays.Add(m_gpOverlayFill);
+            m_gpOverlay = new GraphicsOverlay();
+            m_gpOverlay.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
+            m_sceneView.GraphicsOverlays.Add(m_gpOverlay);
 
             //初始化旋转多边形
             m_rotatePolygonSymbol = new SimpleFillSymbol(SimpleFillSymbolStyle.Solid, m_rotatePolyColor, null);
@@ -134,8 +157,9 @@ namespace WPGIS.Core
             m_gpOverlayFill.Graphics.Add(m_rotatePolygonGraphic);
 
             m_xyCircleSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_xyCircleColor, 1);
-            m_yzCircleSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_xyCircleColor, 1);
-            m_xzCircleSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_xyCircleColor, 1);
+            m_xAxisSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_xAxisColor, 2);
+            m_yAxisSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_yAxisColor, 2);
+            m_zAxisSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_zAxisColor, 2);
 
             PointCollection pointsXY = new PointCollection(SpatialReferences.Wgs84);
             PointCollection pointsXZ = new PointCollection(SpatialReferences.Wgs84);
@@ -159,15 +183,75 @@ namespace WPGIS.Core
             m_xyCircleGraphic = new Graphic(polylineXY, m_xyCircleSymbol);
             m_gpOverlayLine.Graphics.Add(m_xyCircleGraphic);
 
-            //初始化xz平面圆环
-            Polyline polylineXZ = new Polyline(pointsXZ);
-            m_xzCircleGraphic = new Graphic(polylineXZ, m_xzCircleSymbol);
-            m_gpOverlayFill.Graphics.Add(m_xzCircleGraphic);
+            double agreeScale = CommonUtil.getInst().meter2degree(m_scale);
+            //初始化x轴            
+            PointCollection pointsX = new PointCollection(SpatialReferences.Wgs84)
+                {
+                    new MapPoint(0, 0, 0),
+                    new MapPoint(agreeScale, 0, 0),
+                };
+            Polyline polylineXAxis = new Polyline(pointsX);
+            m_xAxisGraphic = new Graphic(polylineXAxis, m_xAxisSymbol);
+            m_gpOverlay.Graphics.Add(m_xAxisGraphic);
 
-            //初始化yz平面圆环
-            Polyline polylineYZ = new Polyline(pointsYZ);
-            m_yzCircleGraphic = new Graphic(polylineYZ, m_yzCircleSymbol);
-            m_gpOverlayFill.Graphics.Add(m_yzCircleGraphic);
+            //初始化x轴头部箭头
+            m_xAxisMarkSymbol = new SimpleMarkerSceneSymbol
+            {
+                Style = SimpleMarkerSceneSymbolStyle.Diamond,
+                Color = m_xAxisColor,
+                Height = 10,
+                Width = 10,
+                Depth = 10,
+                AnchorPosition = SceneSymbolAnchorPosition.Center
+            };
+            m_xAxiMarkGraphic = new Graphic(new MapPoint(agreeScale, 0, 0), m_xAxisMarkSymbol);
+            m_gpOverlay.Graphics.Add(m_xAxiMarkGraphic);
+
+            //初始化y轴            
+            PointCollection pointsY = new PointCollection(SpatialReferences.Wgs84)
+                {
+                    new MapPoint(0, 0, 0, SpatialReferences.Wgs84),
+                    new MapPoint(0, agreeScale, 0, SpatialReferences.Wgs84),
+                };
+            Polyline polylineYAxis = new Polyline(pointsY);
+            m_yAxisGraphic = new Graphic(polylineYAxis, m_yAxisSymbol);
+            m_gpOverlay.Graphics.Add(m_yAxisGraphic);
+
+            //初始化y轴头部箭头
+            m_yAxisMarkSymbol = new SimpleMarkerSceneSymbol
+            {
+                Style = SimpleMarkerSceneSymbolStyle.Diamond,
+                Color = m_yAxisColor,
+                Height = 10,
+                Width = 10,
+                Depth = 10,
+                AnchorPosition = SceneSymbolAnchorPosition.Center
+            };
+            m_yAxiMarkGraphic = new Graphic(new MapPoint(0, agreeScale, 0), m_yAxisMarkSymbol);
+            m_gpOverlay.Graphics.Add(m_yAxiMarkGraphic);
+
+            //初始化z轴            
+            PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
+                {
+                    new MapPoint(0, 0, 0.1),
+                    new MapPoint(0, 0, m_scale),
+                };
+            Polyline polylineZAxis = new Polyline(pointsZ);
+            m_zAxisGraphic = new Graphic(polylineZAxis, m_zAxisSymbol);
+            m_gpOverlay.Graphics.Add(m_zAxisGraphic);
+
+            //初始化z轴头部箭头
+            m_zAxisMarkSymbol = new SimpleMarkerSceneSymbol
+            {
+                Style = SimpleMarkerSceneSymbolStyle.Diamond,
+                Color = m_zAxisColor,
+                Height = 10,
+                Width = 10,
+                Depth = 10,
+                AnchorPosition = SceneSymbolAnchorPosition.Center
+            };
+            m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_scale), m_zAxisMarkSymbol);
+            m_gpOverlay.Graphics.Add(m_zAxiMarkGraphic);
         }
         /// <summary>
         /// 设置可见性
@@ -178,8 +262,12 @@ namespace WPGIS.Core
             if (vis == m_isVisible) return;
             m_isVisible = vis;
             m_xyCircleGraphic.IsVisible = m_isVisible;
-            m_xzCircleGraphic.IsVisible = m_isVisible;
-            m_yzCircleGraphic.IsVisible = m_isVisible;
+            m_xAxisGraphic.IsVisible = m_isVisible;
+            m_yAxisGraphic.IsVisible = m_isVisible;
+            m_zAxisGraphic.IsVisible = m_isVisible;
+            m_xAxiMarkGraphic.IsVisible = m_isVisible;
+            m_yAxiMarkGraphic.IsVisible = m_isVisible;
+            m_zAxiMarkGraphic.IsVisible = m_isVisible;
             m_rotatePolygonGraphic.IsVisible = m_isVisible;
         }
         /// <summary>
@@ -192,6 +280,7 @@ namespace WPGIS.Core
             m_oldPos = m_pos;
             m_pos = pos;
             m_refreshType = 1;
+            refreshGeometry();
         }
         /// <summary>
         /// 返回编辑器的场景位置
@@ -203,20 +292,29 @@ namespace WPGIS.Core
         }
         private void moveGeometry(Graphic pGraphic, Vector3D moveDelta)
         {
-            Polyline tline = pGraphic.Geometry as Polyline;
-            ReadOnlyPart part = tline.Parts[0];
-            if (null == part || part.PointCount <= 0) return;
-            PointCollection points = new PointCollection(SpatialReferences.Wgs84);
-            int iPntSize = part.PointCount;
-            for (int i = 0; i < iPntSize; i++)
+            if (pGraphic.Geometry.GeometryType == GeometryType.Polyline)
             {
-                MapPoint tPnt = part.Points[i];
-                MapPoint newPnt = new MapPoint(tPnt.X + moveDelta.X, tPnt.Y + moveDelta.Y, tPnt.Z + moveDelta.Z, tPnt.SpatialReference);
-                points.Add(newPnt);
-            }
+                Polyline tline = pGraphic.Geometry as Polyline;
+                ReadOnlyPart part = tline.Parts[0];
+                if (null == part || part.PointCount <= 0) return;
+                PointCollection points = new PointCollection(SpatialReferences.Wgs84);
+                int iPntSize = part.PointCount;
+                for (int i = 0; i < iPntSize; i++)
+                {
+                    MapPoint tPnt = part.Points[i];
+                    MapPoint newPnt = new MapPoint(tPnt.X + moveDelta.X, tPnt.Y + moveDelta.Y, tPnt.Z + moveDelta.Z);
+                    points.Add(newPnt);
+                }
 
-            Polyline polyline = new Polyline(points);
-            pGraphic.Geometry = polyline;
+                Polyline polyline = new Polyline(points);
+                pGraphic.Geometry = polyline;
+            }
+            else if (pGraphic.Geometry.GeometryType == GeometryType.Point)
+            {
+                MapPoint tPnt = pGraphic.Geometry as MapPoint;
+                MapPoint newPnt = new MapPoint(tPnt.X + moveDelta.X, tPnt.Y + moveDelta.Y, tPnt.Z + moveDelta.Z, SpatialReferences.Wgs84);
+                pGraphic.Geometry = newPnt;
+            }
         }
 
         private bool isRefresh = false;
@@ -233,8 +331,12 @@ namespace WPGIS.Core
             {
                 Vector3D moveDelta = new Vector3D(m_pos.X - m_oldPos.X, m_pos.Y - m_oldPos.Y, m_pos.Z - m_oldPos.Z);
                 moveGeometry(m_xyCircleGraphic, moveDelta);
-                moveGeometry(m_xzCircleGraphic, moveDelta);
-                moveGeometry(m_yzCircleGraphic, moveDelta);
+                moveGeometry(m_xAxisGraphic, moveDelta);
+                moveGeometry(m_xAxiMarkGraphic, moveDelta);
+                moveGeometry(m_yAxisGraphic, moveDelta);
+                moveGeometry(m_yAxiMarkGraphic, moveDelta);
+                moveGeometry(m_zAxisGraphic, moveDelta);
+                moveGeometry(m_zAxiMarkGraphic, moveDelta);
                 m_oldPos = null;
             }
 
@@ -280,9 +382,7 @@ namespace WPGIS.Core
         }
         private void resetAxisColor()
         {
-            m_xyCircleSymbol.Color = m_xyCircleColor;
-            m_xzCircleSymbol.Color = m_xzCircleColor;
-            m_yzCircleSymbol.Color = m_yzCircleColor;
+            m_xyCircleSymbol.Color = m_xyCircleColor;            
         }
         private async void activeCircle(ScreenPoint screenPnt, bool isFocus)
         {

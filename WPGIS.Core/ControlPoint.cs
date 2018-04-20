@@ -22,7 +22,6 @@ namespace WPGIS.Core
     /// </summary>
     public class ControlPoint : IControlPoint
     {
-        private MapPoint m_mapPos = null;
         private Graphic m_graphic = null;
         private GraphicsOverlay m_gpOverlay = null;
 
@@ -70,12 +69,11 @@ namespace WPGIS.Core
         {
             get
             {
-                return m_mapPos;
+                return m_graphic.Geometry as MapPoint;
             }
             set
             {
-                m_mapPos = value;
-                m_graphic.Geometry = m_mapPos;
+                m_graphic.Geometry = value;
             }
         }
 
@@ -85,7 +83,8 @@ namespace WPGIS.Core
         /// <returns></returns>
         public Vector2D getXY()
         {
-            return new Vector2D(m_mapPos.X, m_mapPos.Y);
+            MapPoint mpos = m_graphic.Geometry as MapPoint;
+            return new Vector2D(mpos.X, mpos.Y);
         }
 
         public bool isGraphic(Graphic pGraphic)

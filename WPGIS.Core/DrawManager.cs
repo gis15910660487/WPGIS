@@ -258,7 +258,7 @@ namespace WPGIS.Core
             if (m_editDraw == null) return;
             if (m_editType == Edit_Type.Edit_Transfer)
             {
-                m_editDraw.moveTo(mPnt);
+                m_editDraw.moveTo(mPnt);               
             }
             else if (m_editType == Edit_Type.Edit_Geometry)
             {

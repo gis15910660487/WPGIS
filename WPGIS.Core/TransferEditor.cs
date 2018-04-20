@@ -38,6 +38,8 @@ namespace WPGIS.Core
         private double m_rotOnXY = 0.0;
         //编辑器放大系数(默认300)
         private float m_scale = 300.0f;
+        //默认离地高度
+        private float m_relativeHeight = 30.0f;
         //场景view               
         private SceneView m_sceneView = null;
         //编辑存储的要素层
@@ -149,7 +151,7 @@ namespace WPGIS.Core
                 Depth = m_scale / 5,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            var location = new MapPoint(0, 0, 0, SpatialReferences.Wgs84);
+            var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84);
             m_spereGraphic = new Graphic(location, m_spereSymbol);
             m_gpOverlay.Graphics.Add(m_spereGraphic);
 
@@ -163,8 +165,8 @@ namespace WPGIS.Core
             //初始化x轴            
             PointCollection pointsX = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, 0),
-                    new MapPoint(agreeScale, 0, 0),
+                    new MapPoint(0, 0, m_relativeHeight),
+                    new MapPoint(agreeScale, 0, m_relativeHeight),
                 };
             Polyline polylineXAxis = new Polyline(pointsX);
             m_xAxisGraphic = new Graphic(polylineXAxis, m_xAxisSymbol);
@@ -180,14 +182,14 @@ namespace WPGIS.Core
                 Depth = 10,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            m_xAxiMarkGraphic = new Graphic(new MapPoint(agreeScale, 0, 0), m_xAxisMarkSymbol);
+            m_xAxiMarkGraphic = new Graphic(new MapPoint(agreeScale, 0, m_relativeHeight), m_xAxisMarkSymbol);
             m_gpOverlay1.Graphics.Add(m_xAxiMarkGraphic);
 
             //初始化y轴            
             PointCollection pointsY = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, 0, SpatialReferences.Wgs84),
-                    new MapPoint(0, agreeScale, 0, SpatialReferences.Wgs84),
+                    new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84),
+                    new MapPoint(0, agreeScale, m_relativeHeight, SpatialReferences.Wgs84),
                 };
             Polyline polylineYAxis = new Polyline(pointsY);
             m_yAxisGraphic = new Graphic(polylineYAxis, m_yAxisSymbol);
@@ -203,14 +205,14 @@ namespace WPGIS.Core
                 Depth = 10,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            m_yAxiMarkGraphic = new Graphic(new MapPoint(0, agreeScale, 0), m_yAxisMarkSymbol);
+            m_yAxiMarkGraphic = new Graphic(new MapPoint(0, agreeScale, m_relativeHeight), m_yAxisMarkSymbol);
             m_gpOverlay1.Graphics.Add(m_yAxiMarkGraphic);
 
             //初始化z轴            
             PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, 0.1),
-                    new MapPoint(0, 0, m_scale),
+                    new MapPoint(0, 0, m_relativeHeight),
+                    new MapPoint(0, 0, m_scale + m_relativeHeight),
                 };
             Polyline polylineZAxis = new Polyline(pointsZ);
             m_zAxisGraphic = new Graphic(polylineZAxis, m_zAxisSymbol);
@@ -226,7 +228,7 @@ namespace WPGIS.Core
                 Depth = 10,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_scale), m_zAxisMarkSymbol);
+            m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_scale + m_relativeHeight), m_zAxisMarkSymbol);
             m_gpOverlay1.Graphics.Add(m_zAxiMarkGraphic);
         }        
         /// <summary>
@@ -236,7 +238,7 @@ namespace WPGIS.Core
         public void setPosition(MapPoint pos)
         {
             if (m_pos.IsEqual(pos)) return;
-            m_moveDelta = new Vector3D(pos.X - m_pos.X, pos.Y - m_pos.Y, pos.Z - m_pos.Z);
+            m_moveDelta = new Vector3D(pos.X - m_pos.X, pos.Y - m_pos.Y, 0);
             refreshGeometry();
             m_pos = pos;
         }
