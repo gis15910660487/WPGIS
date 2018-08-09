@@ -55,6 +55,14 @@ namespace WPGIS.Core
             var pCamera = new Camera(53.16, -4.14, 6289, 95, 71, 0);
             sceneView.SetViewpointCamera(pCamera);
 
+            // Interaction Options https://devtopia.esri.com/runtime/runtime-mapping-api-design/wiki/GeoView-Interaction-options
+            sceneView.InteractionOptions = new Esri.ArcGISRuntime.UI.SceneViewInteractionOptions()
+            {
+                IsEnabled = true,
+                IsFlickEnabled = true,
+                WheelZoomDirection = Esri.ArcGISRuntime.UI.WheelZoomDirection.Default
+            };
+
             //初始化标绘管理器
             DrawManager.getInst().initialize(sceneView);
         }

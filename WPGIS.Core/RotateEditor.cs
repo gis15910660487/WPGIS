@@ -85,8 +85,6 @@ namespace WPGIS.Core
         private SimpleFillSymbol m_rotatePolygonSymbol = null;
         //当前旋转类型
         private Rotate_Type m_rotateType = Rotate_Type.Rotate_None;
-        private GlobeCameraController m_globeCameraControl = null;
-        private OrbitGeoElementCameraController m_orbitCameraController = null;
 
         //剖分角度
         private double m_subAngleDelta = 0.0;
@@ -115,12 +113,6 @@ namespace WPGIS.Core
 
             initEditor();
             setVisible(false);
-
-            m_globeCameraControl = m_sceneView.CameraController as GlobeCameraController;
-            m_orbitCameraController = new OrbitGeoElementCameraController(m_xyCircleGraphic, 20.0)
-            {
-                CameraPitchOffset = 75.0
-            };
 
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
@@ -422,7 +414,7 @@ namespace WPGIS.Core
                 //停止鼠标对三维场景的控制
                 if (isFocus)
                 {
-                    m_sceneView.CameraController = m_orbitCameraController;
+                    m_sceneView.InteractionOptions.IsEnabled = false;
                 }
             }
         }
@@ -473,19 +465,27 @@ namespace WPGIS.Core
         }
         private void sceneView_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (!m_isVisible || m_sceneView == null) return;
-            if (m_rotateType == Rotate_Type.Rotate_None) return;
-            m_rotateType = Rotate_Type.Rotate_None;
-            Log.LogManager.AddLog("sceneView_MouseLeftButtonUp");
-            m_rotateBeginAngle = 0.0;
-            m_angleDetltaTotal = 0.0;
-            m_angleDetltaOneRotate = 0.0;
+            try
+            {
+                if (!m_isVisible || m_sceneView == null) return;
+                if (m_rotateType == Rotate_Type.Rotate_None) return;
+                m_rotateType = Rotate_Type.Rotate_None;
+                Log.LogManager.AddLog("sceneView_MouseLeftButtonUp");
+                m_rotateBeginAngle = 0.0;
+                m_angleDetltaTotal = 0.0;
+                m_angleDetltaOneRotate = 0.0;
 
-            //恢复选中坐标轴的颜色
-            resetAxisColor();
-
-            //恢复使用全局相机
-            m_sceneView.CameraController = m_globeCameraControl;           
+                //恢复选中坐标轴的颜色
+                resetAxisColor();
+            }
+            catch(Exception)
+            {
+            }
+            finally
+            {
+                //恢复使用全局相机
+                m_sceneView.InteractionOptions.IsEnabled = true;
+            }
         }
         private void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {

@@ -29,7 +29,6 @@ namespace WPGIS.Core
         private Color m_focusColor;
 
         bool m_isVisible = false;
-        int m_refreshType = 0;
 
         public event MapPointChangedEventHandler MapPointChangedEvent = null;
         //编辑器位置
@@ -80,9 +79,6 @@ namespace WPGIS.Core
         //移动增量
         Vector3D m_moveDelta;
 
-        private GlobeCameraController m_globeCameraControl = null;
-        private OrbitGeoElementCameraController m_orbitCameraController = null;
-
         public TransferEditor(SceneView sceView)
         {
             m_sceneView = sceView;
@@ -95,12 +91,6 @@ namespace WPGIS.Core
 
             initEditor();
             visible = false;
-
-            m_globeCameraControl = m_sceneView.CameraController as GlobeCameraController;
-            m_orbitCameraController = new OrbitGeoElementCameraController(m_spereGraphic, 20.0)
-            {
-                CameraPitchOffset = 75.0
-            };
 
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
@@ -258,7 +248,6 @@ namespace WPGIS.Core
         {
             if (Math.Abs(m_rotOnXY - angle) < 0.0001) return;
             m_rotOnXY = angle;
-            m_refreshType = 2;
         }
         /// <summary>
         /// 返回xy平面的偏转
@@ -422,15 +411,23 @@ namespace WPGIS.Core
         }
         private void sceneView_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (!m_isVisible || m_sceneView == null) return;
-            if (m_currentAxisType == Axis_Type.Axis_None) return;
+            try
+            {
+                if (!m_isVisible || m_sceneView == null) return;
+                if (m_currentAxisType == Axis_Type.Axis_None) return;
 
-            //恢复选中坐标轴的颜色
-            resetAxisColor();
-
-            //恢复使用全局相机
-            m_sceneView.CameraController = m_globeCameraControl;
-            m_currentAxisType = Axis_Type.Axis_None;
+                //恢复选中坐标轴的颜色
+                resetAxisColor();
+            }
+            catch(Exception)
+            {
+            }
+            finally
+            {
+                //恢复相机使用
+                m_sceneView.InteractionOptions.IsEnabled = true;
+                m_currentAxisType = Axis_Type.Axis_None;
+            }
         }
         private async void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -452,7 +449,7 @@ namespace WPGIS.Core
             if (identifyResults.Graphics.Count == 1)
             {
                 //停止鼠标对三维场景的控制
-                m_sceneView.CameraController = m_orbitCameraController;
+                m_sceneView.InteractionOptions.IsEnabled = false;
 
                 m_moveBeginPoint = hintPnt;
                 Graphic pGraphic = identifyResults.Graphics[0];
