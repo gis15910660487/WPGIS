@@ -105,9 +105,8 @@ namespace WPGIS.Core
             CurrentArrowChangedEvent?.Invoke(m_editDraw);
 
             m_transferEditor.visible = true;
-            MapPoint cpPnt = m_editDraw.mapPosition;
-            MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z, cpPnt.SpatialReference);
-            m_transferEditor.setPosition(tePnt);
+            m_transferEditor.setPosition(m_editDraw.mapPosition);
+            m_transferEditor.setRotOnXY(m_editDraw.angleOnXY);
             m_editType = Edit_Type.Edit_Transfer;
         }
 

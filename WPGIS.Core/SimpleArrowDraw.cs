@@ -111,7 +111,7 @@ namespace WPGIS.Core
             get
             {
                 IControlPoint ctrlPnt = m_controlPointManager.getControlPoint(0);
-                return ctrlPnt.mapPosition;
+                return m_pos;
             }
         }
         /// <summary>

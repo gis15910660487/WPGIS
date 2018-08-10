@@ -35,8 +35,10 @@ namespace WPGIS.Core
         private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
         //编辑器xy平面旋转角度（弧度）             
         private double m_rotOnXY = 0.0;
-        //编辑器放大系数(默认300)
-        private float m_scale = 300.0f;
+        //编辑器放大系数(默认1)
+        private float m_scale = 1.0f;
+        //初始化size(默认300)
+        private float m_initSize = 300.0f;
         //默认离地高度
         private float m_relativeHeight = 30.0f;
         //场景view               
@@ -95,6 +97,17 @@ namespace WPGIS.Core
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
             m_sceneView.PreviewMouseMove += sceneView_MouseMove;
+            m_sceneView.NavigationCompleted += sceneView_NavigationCompleted;
+        }
+
+        private void sceneView_NavigationCompleted(object sender, EventArgs e)
+        {
+            var camera = m_sceneView.Camera;
+            var horDist = GeometryEngine.DistanceGeodetic(camera.Location, m_pos, LinearUnits.Meters, AngularUnits.Degrees, GeodeticCurveType.Geodesic);
+            var dist = Math.Sqrt(Math.Pow(horDist.Distance, 2) + Math.Pow(camera.Location.Z - m_pos.Z, 2));
+            m_scale = (float)dist / 10000;
+            if (m_scale < 1.0f) m_scale = 1.0f;
+            refreshGeometry(m_pos, m_scale, m_rotOnXY);
         }
 
         /// <summary>
@@ -136,9 +149,9 @@ namespace WPGIS.Core
             {
                 Style = SimpleMarkerSceneSymbolStyle.Cube,
                 Color = m_spereColor,
-                Height = m_scale / 5,
-                Width = m_scale / 5,
-                Depth = m_scale / 5,
+                Height = m_initSize / 5,
+                Width = m_initSize / 5,
+                Depth = m_initSize / 5,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
             var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84);
@@ -151,7 +164,7 @@ namespace WPGIS.Core
             m_xAxisSymbol.MarkerStyle = SimpleLineSymbolMarkerStyle.Arrow;
             m_xAxisSymbol.MarkerPlacement = SimpleLineSymbolMarkerPlacement.End;
 
-            double agreeScale = CommonUtil.getInst().meter2degree(m_scale);
+            double agreeScale = CommonUtil.getInst().meter2degree(m_initSize);
             //初始化x轴            
             PointCollection pointsX = new PointCollection(SpatialReferences.Wgs84)
                 {
@@ -170,7 +183,7 @@ namespace WPGIS.Core
                 Height = 10,
                 Width = 10,
                 Depth = 10,
-                AnchorPosition = SceneSymbolAnchorPosition.Center
+                AnchorPosition = SceneSymbolAnchorPosition.Bottom
             };
             m_xAxiMarkGraphic = new Graphic(new MapPoint(agreeScale, 0, m_relativeHeight), m_xAxisMarkSymbol);
             m_gpOverlay1.Graphics.Add(m_xAxiMarkGraphic);
@@ -202,7 +215,7 @@ namespace WPGIS.Core
             PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
                 {
                     new MapPoint(0, 0, m_relativeHeight),
-                    new MapPoint(0, 0, m_scale + m_relativeHeight),
+                    new MapPoint(0, 0, m_initSize + m_relativeHeight),
                 };
             Polyline polylineZAxis = new Polyline(pointsZ);
             m_zAxisGraphic = new Graphic(polylineZAxis, m_zAxisSymbol);
@@ -218,9 +231,9 @@ namespace WPGIS.Core
                 Depth = 10,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_scale + m_relativeHeight), m_zAxisMarkSymbol);
+            m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_initSize + m_relativeHeight), m_zAxisMarkSymbol);
             m_gpOverlay1.Graphics.Add(m_zAxiMarkGraphic);
-        }        
+        }
         /// <summary>
         /// 设置位置
         /// </summary>
@@ -228,9 +241,8 @@ namespace WPGIS.Core
         public void setPosition(MapPoint pos)
         {
             if (m_pos.IsEqual(pos)) return;
-            m_moveDelta = new Vector3D(pos.X - m_pos.X, pos.Y - m_pos.Y, 0);
-            refreshGeometry();
             m_pos = pos;
+            refreshGeometry(m_pos, m_scale, m_rotOnXY);            
         }
         /// <summary>
         /// 返回编辑器的地图位置
@@ -248,6 +260,7 @@ namespace WPGIS.Core
         {
             if (Math.Abs(m_rotOnXY - angle) < 0.0001) return;
             m_rotOnXY = angle;
+            refreshGeometry(m_pos, m_scale, m_rotOnXY);
         }
         /// <summary>
         /// 返回xy平面的偏转
@@ -257,44 +270,37 @@ namespace WPGIS.Core
         {
             return m_rotOnXY;
         }
-        private void moveGeometry(Graphic pGraphic, Vector3D moveDelta)
+        private void refreshGeometry(MapPoint pos, float scale, double angle)
         {
-            if (pGraphic.Geometry.GeometryType == GeometryType.Polyline)
-            {
-                Polyline tline = pGraphic.Geometry as Polyline;
-                ReadOnlyPart part = tline.Parts[0];
-                if (null == part || part.PointCount <= 0) return;
-                PointCollection points = new PointCollection(SpatialReferences.Wgs84);
-                int iPntSize = part.PointCount;
-                for (int i = 0; i < iPntSize; i++)
-                {
-                    MapPoint tPnt = part.Points[i];
-                    MapPoint newPnt = new MapPoint(tPnt.X + moveDelta.X, tPnt.Y + moveDelta.Y, tPnt.Z + moveDelta.Z);
-                    points.Add(newPnt);
-                }
+            MapPoint renderPos = new MapPoint(pos.X, pos.Y, m_relativeHeight, pos.SpatialReference);
 
-                Polyline polyline = new Polyline(points);
-                pGraphic.Geometry = polyline;
-            }
-            else if (pGraphic.Geometry.GeometryType == GeometryType.Point)
+            //先在原点位置计算放大后各轴终点的坐标
+            double newSize = CommonUtil.getInst().meter2degree(m_initSize * m_scale);
+            Vector3D xAxisPointEnd = new Vector3D(newSize, 0, 0);
+            Vector3D yAxisPointEnd = new Vector3D(0, newSize, 0);
+            Vector3D zAxisPointEnd = new Vector3D(0, 0, m_initSize * m_scale);
+            //然后继续在原点位置计算各轴终点旋转后的坐标
+            if (m_rotOnXY > 0)
             {
-                MapPoint tPnt = pGraphic.Geometry as MapPoint;
-                MapPoint newPnt = new MapPoint(tPnt.X + moveDelta.X, tPnt.Y + moveDelta.Y, tPnt.Z + moveDelta.Z, SpatialReferences.Wgs84);
-                pGraphic.Geometry = newPnt;
+                xAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(xAxisPointEnd, m_rotOnXY);
+                yAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(yAxisPointEnd, m_rotOnXY);
             }
-        }
-        /// <summary>
-        /// 更新几何体
-        /// </summary>
-        private void refreshGeometry()
-        {
-            moveGeometry(m_spereGraphic, m_moveDelta);
-            moveGeometry(m_xAxisGraphic, m_moveDelta);
-            moveGeometry(m_xAxiMarkGraphic, m_moveDelta);
-            moveGeometry(m_yAxisGraphic, m_moveDelta);
-            moveGeometry(m_yAxiMarkGraphic, m_moveDelta);
-            moveGeometry(m_zAxisGraphic, m_moveDelta);
-            moveGeometry(m_zAxiMarkGraphic, m_moveDelta);
+
+            //平移计算
+            var xAxisEndMapPoint = new MapPoint(renderPos.X + xAxisPointEnd.X, renderPos.Y + xAxisPointEnd.Y, renderPos.Z + xAxisPointEnd.Z, renderPos.SpatialReference);
+            var yAxisEndMapPoint = new MapPoint(renderPos.X + yAxisPointEnd.X, renderPos.Y + yAxisPointEnd.Y, renderPos.Z + yAxisPointEnd.Z, renderPos.SpatialReference);
+            var zAxisEndMapPoint = new MapPoint(renderPos.X + zAxisPointEnd.X, renderPos.Y + zAxisPointEnd.Y, renderPos.Z + zAxisPointEnd.Z, renderPos.SpatialReference);
+
+            m_spereGraphic.Geometry = renderPos;
+
+            m_xAxiMarkGraphic.Geometry = xAxisEndMapPoint;
+            m_xAxisGraphic.Geometry = new Polyline(new PointCollection(renderPos.SpatialReference) { renderPos, xAxisEndMapPoint });
+
+            m_yAxiMarkGraphic.Geometry = yAxisEndMapPoint;
+            m_yAxisGraphic.Geometry = new Polyline(new PointCollection(renderPos.SpatialReference) { renderPos, yAxisEndMapPoint });
+
+            m_zAxiMarkGraphic.Geometry = zAxisEndMapPoint;
+            m_zAxisGraphic.Geometry = new Polyline(new PointCollection(renderPos.SpatialReference) { renderPos, zAxisEndMapPoint });
         }
         private void resetAxisColor()
         {
@@ -341,48 +347,17 @@ namespace WPGIS.Core
                 }
             }
         }
-        /// <summary>
-        /// 沿指定轴移动到屏幕点击位置
-        /// </summary>
-        /// <param name="hintPnt">屏幕点击位置</param>
-        /// <param name="pGrahic">轴</param>
-        private void moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
+        
+        private void moveTo(MapPoint hintMapPnt)
         {
-            Polyline tline = pGrahic.Geometry as Polyline;
-            MapPoint mapBeginPnt = tline.Parts[0].Points[0];
-            MapPoint mapEndPnt = tline.Parts[0].Points[1];
-            ScreenPoint scBeginPnt = m_sceneView.LocationToScreen(mapBeginPnt);
-            ScreenPoint scEndPnt = m_sceneView.LocationToScreen(mapEndPnt);
-
-            //移动的二维向量
-            Vector2D vecMove = new Vector2D(hintPnt.X - m_moveBeginPoint.X, hintPnt.Y - m_moveBeginPoint.Y);
-            //x轴在屏幕上的二维向量
-            Vector2D vecAxis = new Vector2D(scEndPnt.X - scBeginPnt.X, scEndPnt.Y - scBeginPnt.Y);
-            double dotValue = vecMove.Dot(vecAxis);
-            if (Math.Abs(dotValue) < 0.000001) return;
-
-            Vector2D vecMoveProject = vecAxis * (vecAxis.Dot(vecMove) / vecAxis.MagnitudeSquared);
-            //移动比例
-            double dRatio = vecMoveProject.Magnitude / vecAxis.Magnitude;
-
-            Vector3D mapVec = new Vector3D(mapBeginPnt.X - mapEndPnt.X, mapBeginPnt.Y - mapEndPnt.Y, mapBeginPnt.Z - mapEndPnt.Z);
-            if (dotValue > 0)
-            {
-                mapVec = -mapVec;
-            }
-            double mapLength = mapVec.Magnitude;
-            double moveLength = mapLength * dRatio;
-            //计算出移动的向量增量
-            m_moveDelta = mapVec.Normalize() * Math.Abs(moveLength);
-            refreshGeometry();
-
-            //更新位置并重绘
-            m_pos = new MapPoint(m_pos.X + m_moveDelta.X, m_pos.Y + m_moveDelta.Y, m_pos.Z + m_moveDelta.Z, m_pos.SpatialReference);
+            //更新位置
+            m_pos = hintMapPnt;
+            //重绘
+            refreshGeometry(m_pos, m_scale, m_rotOnXY);
             //触发位置改变事件
             MapPointChangedEvent?.Invoke(m_pos);
-
-            m_moveBeginPoint = hintPnt;
         }
+
         private void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (!m_isVisible || m_sceneView == null) return;
@@ -395,17 +370,10 @@ namespace WPGIS.Core
             {
                 //移动坐标轴
                 ScreenPoint hintPnt = e.GetPosition(m_sceneView);
-                if (m_currentAxisType == Axis_Type.Axis_X)
+                MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
+                if (mPnt != null)
                 {
-                    moveByAxis(hintPnt, m_xAxisGraphic);
-                }
-                else if (m_currentAxisType == Axis_Type.Axis_Y)
-                {
-                    moveByAxis(hintPnt, m_yAxisGraphic);
-                }
-                else if (m_currentAxisType == Axis_Type.Axis_Z)
-                {
-                    moveByAxis(hintPnt, m_zAxisGraphic);
+                    moveTo(mPnt);
                 }
             }
         }
@@ -419,7 +387,7 @@ namespace WPGIS.Core
                 //恢复选中坐标轴的颜色
                 resetAxisColor();
             }
-            catch(Exception)
+            catch (Exception)
             {
             }
             finally
