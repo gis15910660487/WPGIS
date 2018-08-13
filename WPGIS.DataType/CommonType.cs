@@ -50,6 +50,7 @@ namespace WPGIS.DataType
         Axis_X,
         Axis_Y,
         Axis_Z,
+        Axis_XYZ
     }
 
     /// <summary>

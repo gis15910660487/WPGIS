@@ -1,18 +1,20 @@
 ﻿
+using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.Data;
 using Esri.ArcGISRuntime.Geometry;
 using Esri.ArcGISRuntime.Mapping;
 using Esri.ArcGISRuntime.Symbology;
-using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
 
 using Mathlib;
 using System;
 using System.Windows.Media;
+using System.Threading.Tasks;
 
 using WPGIS.DataType;
 using ScreenPoint = System.Windows.Point;
 using PointCollection = Esri.ArcGISRuntime.Geometry.PointCollection;
+
 
 namespace WPGIS.Core
 {
@@ -44,8 +46,8 @@ namespace WPGIS.Core
         //场景view               
         private SceneView m_sceneView = null;
         //编辑存储的要素层
-        private GraphicsOverlay m_gpOverlay = null;
-        private GraphicsOverlay m_gpOverlay1 = null;
+        private GraphicsOverlay m_gpOverlayAxis = null;
+        private GraphicsOverlay m_gpOverlayMark = null;
         //位置球
         private Graphic m_spereGraphic = null;
         //x轴
@@ -137,12 +139,12 @@ namespace WPGIS.Core
         /// </summary>
         public void initEditor()
         {
-            m_gpOverlay = new GraphicsOverlay();
-            m_gpOverlay.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
-            m_sceneView.GraphicsOverlays.Add(m_gpOverlay);
-            m_gpOverlay1 = new GraphicsOverlay();
-            m_gpOverlay1.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
-            m_sceneView.GraphicsOverlays.Add(m_gpOverlay1);
+            m_gpOverlayAxis = new GraphicsOverlay();
+            m_gpOverlayAxis.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
+            m_sceneView.GraphicsOverlays.Add(m_gpOverlayAxis);
+            m_gpOverlayMark = new GraphicsOverlay();
+            m_gpOverlayMark.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
+            m_sceneView.GraphicsOverlays.Add(m_gpOverlayMark);
 
             //初始化球
             m_spereSymbol = new SimpleMarkerSceneSymbol
@@ -156,7 +158,7 @@ namespace WPGIS.Core
             };
             var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84);
             m_spereGraphic = new Graphic(location, m_spereSymbol);
-            m_gpOverlay.Graphics.Add(m_spereGraphic);
+            m_gpOverlayAxis.Graphics.Add(m_spereGraphic);
 
             m_xAxisSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_xAxisColor, 2);
             m_yAxisSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_yAxisColor, 2);
@@ -173,7 +175,7 @@ namespace WPGIS.Core
                 };
             Polyline polylineXAxis = new Polyline(pointsX);
             m_xAxisGraphic = new Graphic(polylineXAxis, m_xAxisSymbol);
-            m_gpOverlay.Graphics.Add(m_xAxisGraphic);
+            m_gpOverlayAxis.Graphics.Add(m_xAxisGraphic);
 
             //初始化x轴头部箭头
             m_xAxisMarkSymbol = new SimpleMarkerSceneSymbol
@@ -186,7 +188,7 @@ namespace WPGIS.Core
                 AnchorPosition = SceneSymbolAnchorPosition.Bottom
             };
             m_xAxiMarkGraphic = new Graphic(new MapPoint(agreeScale, 0, m_relativeHeight), m_xAxisMarkSymbol);
-            m_gpOverlay1.Graphics.Add(m_xAxiMarkGraphic);
+            m_gpOverlayMark.Graphics.Add(m_xAxiMarkGraphic);
 
             //初始化y轴            
             PointCollection pointsY = new PointCollection(SpatialReferences.Wgs84)
@@ -196,7 +198,7 @@ namespace WPGIS.Core
                 };
             Polyline polylineYAxis = new Polyline(pointsY);
             m_yAxisGraphic = new Graphic(polylineYAxis, m_yAxisSymbol);
-            m_gpOverlay.Graphics.Add(m_yAxisGraphic);
+            m_gpOverlayAxis.Graphics.Add(m_yAxisGraphic);
 
             //初始化y轴头部箭头
             m_yAxisMarkSymbol = new SimpleMarkerSceneSymbol
@@ -209,7 +211,7 @@ namespace WPGIS.Core
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
             m_yAxiMarkGraphic = new Graphic(new MapPoint(0, agreeScale, m_relativeHeight), m_yAxisMarkSymbol);
-            m_gpOverlay1.Graphics.Add(m_yAxiMarkGraphic);
+            m_gpOverlayMark.Graphics.Add(m_yAxiMarkGraphic);
 
             //初始化z轴            
             PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
@@ -219,7 +221,7 @@ namespace WPGIS.Core
                 };
             Polyline polylineZAxis = new Polyline(pointsZ);
             m_zAxisGraphic = new Graphic(polylineZAxis, m_zAxisSymbol);
-            m_gpOverlay1.Graphics.Add(m_zAxisGraphic);
+            m_gpOverlayAxis.Graphics.Add(m_zAxisGraphic);
 
             //初始化z轴头部箭头
             m_zAxisMarkSymbol = new SimpleMarkerSceneSymbol
@@ -232,7 +234,7 @@ namespace WPGIS.Core
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
             m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_initSize + m_relativeHeight), m_zAxisMarkSymbol);
-            m_gpOverlay1.Graphics.Add(m_zAxiMarkGraphic);
+            m_gpOverlayMark.Graphics.Add(m_zAxiMarkGraphic);
         }
         /// <summary>
         /// 设置位置
@@ -242,7 +244,7 @@ namespace WPGIS.Core
         {
             if (m_pos.IsEqual(pos)) return;
             m_pos = pos;
-            refreshGeometry(m_pos, m_scale, m_rotOnXY);            
+            refreshGeometry(m_pos, m_scale, m_rotOnXY);
         }
         /// <summary>
         /// 返回编辑器的地图位置
@@ -314,44 +316,62 @@ namespace WPGIS.Core
             m_xAxisMarkSymbol.Color = m_xAxisColor;
             m_yAxisMarkSymbol.Color = m_yAxisColor;
             m_zAxisMarkSymbol.Color = m_zAxisColor;
+            m_spereSymbol.Color = m_spereColor;
         }
-        private async void activeAxis(ScreenPoint screenPnt)
-        {
-            resetAxisColor();
 
+        private async Task<Graphic> IdentifyAxis(ScreenPoint screenPnt)
+        {
             var tolerance = 10d;
-            var maximumResults = 3;
+            var maximumResults = 4;
             var onlyReturnPopups = false;
 
             //选中坐标轴
             IdentifyGraphicsOverlayResult identifyResults = await m_sceneView.IdentifyGraphicsOverlayAsync(
-                m_gpOverlay,
+                m_gpOverlayAxis,
                 screenPnt,
                 tolerance,
                 onlyReturnPopups,
                 maximumResults);
 
+            Graphic pRetGraphic = null;
             if (identifyResults.Graphics.Count == 1)
             {
-                Graphic pGraphic = identifyResults.Graphics[0];
-                if (pGraphic == m_xAxisGraphic)
-                {
-                    m_xAxisSymbol.Color = m_activeColor;
-                    m_xAxisMarkSymbol.Color = m_activeColor;
-                }
-                else if (pGraphic == m_yAxisGraphic)
-                {
-                    m_yAxisSymbol.Color = m_activeColor;
-                    m_yAxisMarkSymbol.Color = m_activeColor;
-                }
-                else if (pGraphic == m_zAxisGraphic)
-                {
-                    m_zAxisSymbol.Color = m_activeColor;
-                    m_zAxisMarkSymbol.Color = m_activeColor;
-                }
+                pRetGraphic = identifyResults.Graphics[0];
+            }
+            else if(identifyResults.Graphics.Count > 1)
+            {
+                pRetGraphic = m_spereGraphic;
+            }
+
+            return pRetGraphic;
+        }
+
+        private async void activeAxis(ScreenPoint screenPnt)
+        {
+            resetAxisColor();
+
+            Graphic hitGraphic = await IdentifyAxis(screenPnt);
+            if (hitGraphic == m_xAxisGraphic)
+            {
+                m_xAxisSymbol.Color = m_activeColor;
+                m_xAxisMarkSymbol.Color = m_activeColor;
+            }
+            else if (hitGraphic == m_yAxisGraphic)
+            {
+                m_yAxisSymbol.Color = m_activeColor;
+                m_yAxisMarkSymbol.Color = m_activeColor;
+            }
+            else if (hitGraphic == m_zAxisGraphic)
+            {
+                m_zAxisSymbol.Color = m_activeColor;
+                m_zAxisMarkSymbol.Color = m_activeColor;
+            }
+            else if (hitGraphic == m_spereGraphic)
+            {
+                m_spereSymbol.Color = m_activeColor;
             }
         }
-        
+
         private void moveTo(MapPoint hintMapPnt)
         {
             //更新位置
@@ -429,7 +449,7 @@ namespace WPGIS.Core
                 {
                     moveByAxis(hintPnt, m_zAxisGraphic);
                 }
-                else
+                else if (m_currentAxisType == Axis_Type.Axis_XYZ)
                 {
                     MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
                     if (mPnt != null)
@@ -462,44 +482,37 @@ namespace WPGIS.Core
         private async void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (!m_isVisible || m_sceneView == null) return;
-
-            var tolerance = 10d;
-            var maximumResults = 3;
-            var onlyReturnPopups = false;
+          
             ScreenPoint hintPnt = e.GetPosition(m_sceneView);
-
-            //选中坐标轴
-            IdentifyGraphicsOverlayResult identifyResults = await m_sceneView.IdentifyGraphicsOverlayAsync(
-                m_gpOverlay,
-                hintPnt,
-                tolerance,
-                onlyReturnPopups,
-                maximumResults);
-
-            if (identifyResults.Graphics.Count == 1)
+            Graphic hitGraphic = await IdentifyAxis(hintPnt);
+            if(hitGraphic != null)
             {
                 //停止鼠标对三维场景的控制
                 m_sceneView.InteractionOptions.IsEnabled = false;
-
                 m_moveBeginPoint = hintPnt;
-                Graphic pGraphic = identifyResults.Graphics[0];
-                if (pGraphic == m_xAxisGraphic)
+
+                if (hitGraphic == m_xAxisGraphic)
                 {
                     m_xAxisSymbol.Color = m_focusColor;
                     m_xAxisMarkSymbol.Color = m_focusColor;
                     m_currentAxisType = Axis_Type.Axis_X;
                 }
-                else if (pGraphic == m_yAxisGraphic)
+                else if (hitGraphic == m_yAxisGraphic)
                 {
                     m_yAxisSymbol.Color = m_focusColor;
                     m_yAxisMarkSymbol.Color = m_focusColor;
                     m_currentAxisType = Axis_Type.Axis_Y;
                 }
-                else if (pGraphic == m_zAxisGraphic)
+                else if (hitGraphic == m_zAxisGraphic)
                 {
                     m_zAxisSymbol.Color = m_focusColor;
                     m_zAxisMarkSymbol.Color = m_focusColor;
                     m_currentAxisType = Axis_Type.Axis_Z;
+                }
+                else if (hitGraphic == m_spereGraphic)
+                {
+                    m_spereSymbol.Color = m_focusColor;
+                    m_currentAxisType = Axis_Type.Axis_XYZ;
                 }
             }
         }
