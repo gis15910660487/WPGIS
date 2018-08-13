@@ -63,21 +63,6 @@ namespace WPGIS.Core
             refresh();
         }
 
-        /// <summary>
-        /// 左键拾取控制点
-        /// </summary>
-        /// <param name="sender"></param>
-        /// <param name="e"></param>
-        private async void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
-        {
-            IControlPoint selectPnt = await m_controlPointManager.identifyControlPoint(e.GetPosition(m_sceneView));
-            if (selectPnt != null)
-            {
-                SelectCtrlPointEvent?.Invoke(selectPnt);
-                m_selectedCtrlPoint = selectPnt;
-            }
-        }
-
         public override void moveTo(MapPoint pnt)
         {
             m_pos = pnt;
@@ -221,6 +206,8 @@ namespace WPGIS.Core
             //恢复边框色
             selected = false;
         }
+
+        #region private functions
 
         private int getBezierPos(IList<Vector2D> cp, IList<Vector2D> points, double fStep)
         {
@@ -397,7 +384,7 @@ namespace WPGIS.Core
             }
         }
 
-        MapPoint convert2MapPoint(Vector2D pnt2d)
+        private MapPoint convert2MapPoint(Vector2D pnt2d)
         {
             return new MapPoint(pnt2d.X, pnt2d.Y, 0.0, SpatialReferences.Wgs84);
         }
@@ -421,41 +408,20 @@ namespace WPGIS.Core
         }
 
         /// <summary>
-        /// 开启移动模式
+        /// 左键拾取控制点
         /// </summary>
-        public override void startMove()
+        /// <param name="sender"></param>
+        /// <param name="e"></param>
+        private async void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            m_editType = Edit_Type.Edit_Transfer;
-            selected = true;
-        }
-
-        /// <summary>
-        /// 结束移动模式
-        /// </summary>
-        public override void endMove()
-        {
-            m_editType = Edit_Type.Edit_None;
-            selected = false;
-        }
-
-        /// <summary>
-        /// 停止
-        /// </summary>
-        public override void stopAll()
-        {
-            if (m_editType == Edit_Type.Edit_Geometry)
+            IControlPoint selectPnt = await m_controlPointManager.identifyControlPoint(e.GetPosition(m_sceneView));
+            if (selectPnt != null)
             {
-                endEdit();
-            }
-            else if (m_editType == Edit_Type.Edit_Transfer)
-            {
-                endMove();
-            }
-            else if (m_editType == Edit_Type.Edit_Rotate)
-            {
-                endRotate();
+                SelectCtrlPointEvent?.Invoke(selectPnt);
+                m_selectedCtrlPoint = selectPnt;
             }
         }
+        #endregion
 
         #region IDisposable Support
         private bool disposedValue = false; // 要检测冗余调用
@@ -469,8 +435,13 @@ namespace WPGIS.Core
                     // TODO: 释放托管状态(托管对象)。
                     visible = false;
                     m_headPoints.Clear();
-                    m_gpOverlay.Graphics.Remove(m_graphic);
-                    m_graphic = null;
+
+                    if (m_graphic != null)
+                    {
+                        m_gpOverlay.Graphics.Remove(m_graphic);
+                        m_graphic = null;
+                    }
+
                     m_fillSymbol = null;
                     m_controlPointManager.clear();
                 }

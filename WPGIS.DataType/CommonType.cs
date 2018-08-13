@@ -39,6 +39,7 @@ namespace WPGIS.DataType
     public enum DrawType
     {
         DrawType_SimpleArrow = 1 << 1,      //简单箭头标绘
+        DrawType_SimpleModel = 2 << 2,      //简单模型标绘
     }
 
     /// <summary>
@@ -59,6 +60,7 @@ namespace WPGIS.DataType
     public enum Edit_Type
     {
         Edit_None,                     //默认
+        Edit_Create,                   //创建
         Edit_Transfer,                 //移动位置
         Edit_Rotate,                   //旋转位置
         Edit_Geometry,                 //修改形状

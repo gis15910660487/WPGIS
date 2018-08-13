@@ -22,10 +22,7 @@ namespace WPGIS.Core
         private ToobarModel m_model = null;
 
         private bool m_isSelectArrow = false;        //选择箭头状态
-        private bool m_isDrawArrow = false;          //部署箭头状态
-        private bool m_isCreateArrow = false;        //创建箭头状态
         private SceneView m_sceneView = null;
-        private SimpleArrowDraw m_arrowDraw = null;
 
         public ToolbarViewModel(SceneView sceneView)
         {
@@ -279,19 +276,17 @@ namespace WPGIS.Core
         {
             cancelDrawArrow();
             m_isSelectArrow = true;
-            m_isDrawArrow = false;
-            m_isCreateArrow = false;
         }
 
         private void drawArrowClick(object obj)
         {
-            if (m_isDrawArrow && m_isCreateArrow && m_arrowDraw != null)
+            if (DrawManager.getInst().getCurrentEditMode() == Edit_Type.Edit_Create)
             {
                 return;
             }
             m_isSelectArrow = false;
-            m_isCreateArrow = false;
-            m_isDrawArrow = !m_isDrawArrow;
+            //需优化，模型（箭头）
+            DrawManager.getInst().createDraw(DrawType.DrawType_SimpleArrow);
         }
 
         private void moveArrowClick(object obj)
@@ -313,36 +308,28 @@ namespace WPGIS.Core
 
         private void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
-            if (m_isDrawArrow)
-            {
-                m_isDrawArrow = false;
-                m_isCreateArrow = false;
-            }
-
             //拾取箭头
             if (m_isSelectArrow)
             {
                 ScreenPoint hintPnt = e.GetPosition(m_sceneView);
                 DrawManager.getInst().pointSelectDraw(hintPnt);
             }
+
+            if(DrawManager.getInst().getCurrentEditMode() == Edit_Type.Edit_Create)
+            {
+                DrawManager.getInst().stopEdit();
+            }
         }
 
         private void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
-        {
-            if (!m_isDrawArrow) return;
-
-            if (!m_isCreateArrow)
-            {
-                m_isCreateArrow = true;
-                m_arrowDraw = DrawManager.getInst().createDraw(DrawType.DrawType_SimpleArrow) as SimpleArrowDraw;
-            }
-            else
+        {    
+            if(DrawManager.getInst().getCurrentEditMode() == Edit_Type.Edit_Create && DrawManager.getInst().getCurrentDraw() != null)
             {
                 ScreenPoint hintPnt = e.GetPosition(m_sceneView);
                 MapPoint mpnt = m_sceneView.ScreenToBaseSurface(hintPnt);
                 if (mpnt != null)
                 {
-                    m_arrowDraw.moveTo(mpnt);
+                    DrawManager.getInst().getCurrentDraw().moveTo(mpnt);
                 }
             }
         }
@@ -352,17 +339,9 @@ namespace WPGIS.Core
         /// </summary>
         private void cancelDrawArrow()
         {
-            if (m_isDrawArrow && m_isCreateArrow && m_arrowDraw != null)
+            if (DrawManager.getInst().getCurrentEditMode() == Edit_Type.Edit_Create)
             {
-                m_isDrawArrow = false;
-                m_isCreateArrow = false;
-
-                //删除箭头
-                if (m_arrowDraw != null)
-                {
-                    DrawManager.getInst().removeDraw(m_arrowDraw);
-                    m_arrowDraw = null;
-                }
+                DrawManager.getInst().removeCurrentDraw();
             }
         }
     }

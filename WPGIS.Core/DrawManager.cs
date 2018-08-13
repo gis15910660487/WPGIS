@@ -70,6 +70,23 @@ namespace WPGIS.Core
         }
 
         /// <summary>
+        /// 返回当前编辑模式
+        /// </summary>
+        /// <returns></returns>
+        public Edit_Type getCurrentEditMode() { return m_editType; }
+
+        public int getDrawCount() { return m_draws.Count; }
+
+        public void removeCurrentDraw()
+        {
+            if(m_editDraw != null)
+            {
+                removeDraw(m_editDraw);
+            }
+            m_editType = Edit_Type.Edit_None;
+        }
+
+        /// <summary>
         /// 设置旋转角度
         /// </summary>
         /// <param name="angle">角度(弧度)</param>
@@ -194,6 +211,12 @@ namespace WPGIS.Core
                         objDraw.initGraphic();
                         break;
                     }
+                case DrawType.DrawType_SimpleModel:
+                    {
+                        objDraw = new SimpleModelDraw(m_sceneView);
+                        objDraw.initGraphic();
+                        break;
+                    }
                 default:
                     break;
             }
@@ -202,6 +225,8 @@ namespace WPGIS.Core
             {
                 m_draws.Add(objDraw);
             }
+            m_editType = Edit_Type.Edit_Create;
+            m_editDraw = objDraw;
 
             return objDraw;
         }

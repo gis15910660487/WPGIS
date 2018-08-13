@@ -36,7 +36,7 @@ namespace WPGIS.Core
         //箭头xy平面旋转角度（弧度）             
         protected double m_rotOnXY = 0.0;
 
-        public abstract event SelectCtrlPointEventHandler SelectCtrlPointEvent;
+        public virtual event SelectCtrlPointEventHandler SelectCtrlPointEvent;
 
         #region 公共属性
 
@@ -197,10 +197,6 @@ namespace WPGIS.Core
         {
         }
 
-        public virtual void endMove()
-        {
-        }
-
         public virtual void endRotate()
         {
         }
@@ -221,16 +217,45 @@ namespace WPGIS.Core
         {
         }
 
-        public virtual void startMove()
-        {
-        }
-
         public virtual void startRotate()
         {
         }
 
+        /// <summary>
+        /// 开启移动模式
+        /// </summary>
+        public virtual void startMove()
+        {
+            m_editType = Edit_Type.Edit_Transfer;
+            selected = true;
+        }
+
+        /// <summary>
+        /// 结束移动模式
+        /// </summary>
+        public virtual void endMove()
+        {
+            m_editType = Edit_Type.Edit_None;
+            selected = false;
+        }
+
+        /// <summary>
+        /// 停止
+        /// </summary>
         public virtual void stopAll()
         {
+            if (m_editType == Edit_Type.Edit_Geometry)
+            {
+                endEdit();
+            }
+            else if (m_editType == Edit_Type.Edit_Transfer)
+            {
+                endMove();
+            }
+            else if (m_editType == Edit_Type.Edit_Rotate)
+            {
+                endRotate();
+            }
         }
     }
 }
