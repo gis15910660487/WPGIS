@@ -11,7 +11,7 @@ namespace WPGIS.DataType
     /// </summary>
     public interface IDrawInterface : IDisposable
     {
-        event SelectCtrlPointEventHandler selectCtrlPointEvent;
+        event SelectCtrlPointEventHandler SelectCtrlPointEvent;
 
         /// <summary>
         /// 编号
@@ -62,11 +62,7 @@ namespace WPGIS.DataType
         /// <summary>
         /// 初始化几何体
         /// </summary>
-        void initGraphic();
-        /// <summary>
-        /// 刷新
-        /// </summary>
-        void update();
+        void initGraphic();       
         /// <summary>
         /// 开启移动模式
         /// </summary>

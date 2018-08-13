@@ -17,7 +17,6 @@ namespace WPGIS.Core
     public class DrawManager
     {
         private SceneView m_sceneView = null;
-        private GraphicsOverlay m_gpOverlay = null;
         private IDrawInterface m_editDraw = null;
         private TransferEditor m_transferEditor = null;
         private RotateEditor m_rotateEditor = null;
@@ -48,9 +47,6 @@ namespace WPGIS.Core
         public void initialize(SceneView sceneView)
         {
             m_sceneView = sceneView;
-            m_gpOverlay = new GraphicsOverlay();
-            m_gpOverlay.SceneProperties.SurfacePlacement = SurfacePlacement.Draped;
-            m_sceneView.GraphicsOverlays.Add(m_gpOverlay);
 
             m_transferEditor = new TransferEditor(m_sceneView);
             m_transferEditor.initEditor();
@@ -63,21 +59,6 @@ namespace WPGIS.Core
 
             //双击开启编辑
             m_sceneView.MouseDoubleClick += sceneView_MouseDoubleClick;
-        }
-        /// <summary>
-        /// 刷新绘制管理器
-        /// </summary>
-        public void update()
-        {
-            if (m_rotateEditor != null)
-            {
-                m_rotateEditor.update();
-            }
-
-            foreach(var draw in m_draws)
-            {
-                draw.update();
-            }
         }
         /// <summary>
         /// 返回当前绘制对象
@@ -94,11 +75,11 @@ namespace WPGIS.Core
         /// <param name="angle">角度(弧度)</param>
         public void setRotateAngle(double angle)
         {
-            if(m_editDraw != null)
+            if (m_editDraw != null)
             {
                 m_editDraw.angleOnXY = angle;
             }
-            if(m_transferEditor != null && m_transferEditor.visible)
+            if (m_transferEditor != null && m_transferEditor.visible)
             {
                 m_transferEditor.setRotOnXY(angle);
             }
@@ -134,17 +115,17 @@ namespace WPGIS.Core
         {
             m_rotateEditor.setVisible(false);
             m_transferEditor.visible = false;
-            
+
             if (m_editDraw != null)
             {
                 m_editDraw.stopAll();
             }
-            m_editDraw = draw;           
+            m_editDraw = draw;
             if (m_editDraw != null)
             {
                 m_editDraw.startEdit();
                 m_editType = Edit_Type.Edit_Geometry;
-                m_editDraw.selectCtrlPointEvent += editDraw_selectCtrlPointEvent;
+                m_editDraw.SelectCtrlPointEvent += editDraw_selectCtrlPointEvent;
             }
             //触发当前箭头改变事件
             CurrentArrowChangedEvent?.Invoke(m_editDraw);
@@ -209,7 +190,7 @@ namespace WPGIS.Core
             {
                 case DrawType.DrawType_SimpleArrow:
                     {
-                        objDraw = new SimpleArrowDraw(m_sceneView, m_gpOverlay);
+                        objDraw = new SimpleArrowDraw(m_sceneView);
                         objDraw.initGraphic();
                         break;
                     }
@@ -226,12 +207,12 @@ namespace WPGIS.Core
         }
 
         /// <summary>
-        /// 拾取箭头功能
+        /// 拾取绘制实体
         /// </summary>
         /// <param name="snPnt">屏幕坐标</param>        
         public async void pointSelectDraw(ScreenPoint hintPnt)
         {
-            if(m_editDraw != null)
+            if (m_editDraw != null)
             {
                 m_editDraw.selected = false;
             }
@@ -240,29 +221,32 @@ namespace WPGIS.Core
             var maximumResults = 3;
             var onlyReturnPopups = false;
             //选中坐标轴
-            IdentifyGraphicsOverlayResult identifyResults = await m_sceneView.IdentifyGraphicsOverlayAsync(
-                m_gpOverlay,
+            var identifyResults = await m_sceneView.IdentifyGraphicsOverlaysAsync(
                 hintPnt,
                 tolerance,
                 onlyReturnPopups,
                 maximumResults);
 
-            if (identifyResults.Graphics.Count == 1)
+            if (identifyResults.Count >= 1)
             {
-                m_editDraw = findDraw(identifyResults.Graphics[0]);
-                if(m_editDraw != null)
+                var identifyResult = identifyResults[0];
+                if (identifyResult.Graphics.Count == 1)
                 {
-                    m_editDraw.selected = true;
-
-                    if(m_transferEditor.visible)
+                    m_editDraw = findDraw(identifyResult.Graphics[0]);
+                    if (m_editDraw != null)
                     {
-                        MapPoint cpPnt = m_editDraw.mapPosition;
-                        MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z, cpPnt.SpatialReference);
-                        m_transferEditor.setPosition(tePnt);
-                    }
+                        m_editDraw.selected = true;
 
-                    //触发当前箭头改变事件
-                    CurrentArrowChangedEvent?.Invoke(m_editDraw);
+                        if (m_transferEditor.visible)
+                        {
+                            MapPoint cpPnt = m_editDraw.mapPosition;
+                            MapPoint tePnt = new MapPoint(cpPnt.X, cpPnt.Y, cpPnt.Z, cpPnt.SpatialReference);
+                            m_transferEditor.setPosition(tePnt);
+                        }
+
+                        //触发当前箭头改变事件
+                        CurrentArrowChangedEvent?.Invoke(m_editDraw);
+                    }
                 }
             }
         }
@@ -273,7 +257,7 @@ namespace WPGIS.Core
             if (m_editDraw == null) return;
             if (m_editType == Edit_Type.Edit_Transfer)
             {
-                m_editDraw.moveTo(mPnt);               
+                m_editDraw.moveTo(mPnt);
             }
             else if (m_editType == Edit_Type.Edit_Geometry)
             {
@@ -294,7 +278,7 @@ namespace WPGIS.Core
             {
                 m_editDraw.stopAll();
                 m_editType = Edit_Type.Edit_None;
-                m_editDraw.selectCtrlPointEvent -= editDraw_selectCtrlPointEvent;
+                m_editDraw.SelectCtrlPointEvent -= editDraw_selectCtrlPointEvent;
                 m_transferEditor.visible = false;
             }
 
@@ -305,22 +289,28 @@ namespace WPGIS.Core
             ScreenPoint hintPnt = e.GetPosition(m_sceneView);
 
             //选中坐标轴
-            IdentifyGraphicsOverlayResult identifyResults = await m_sceneView.IdentifyGraphicsOverlayAsync(
-                m_gpOverlay,
+            var identifyResults = await m_sceneView.IdentifyGraphicsOverlaysAsync(
                 hintPnt,
                 tolerance,
                 onlyReturnPopups,
                 maximumResults);
 
-            //开启编辑
-            if (identifyResults.Graphics.Count == 1)
+            if (identifyResults.Count >= 1)
             {
-                m_editDraw = findDraw(identifyResults.Graphics[0]);
-                startEdit(m_editDraw);
+                var identifyResult = identifyResults[0];
+                if (identifyResult.Graphics.Count == 1)
+                {
+                    //开启编辑
+                    if (identifyResult.Graphics.Count == 1)
+                    {
+                        m_editDraw = findDraw(identifyResult.Graphics[0]);
+                        startEdit(m_editDraw);
 
-                //触发当前箭头改变事件
-                CurrentArrowChangedEvent?.Invoke(m_editDraw);
-            }
+                        //触发当前箭头改变事件
+                        CurrentArrowChangedEvent?.Invoke(m_editDraw);
+                    }
+                }
+            }            
         }
         private void editDraw_selectCtrlPointEvent(IControlPoint cpnt)
         {

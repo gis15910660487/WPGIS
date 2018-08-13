@@ -193,10 +193,12 @@ namespace WPGIS.Core
             if (draw == null)
             {
                 HasCurrentArrow = false;
+                m_isSelectArrow = true;
             }
             else
             {
                 HasCurrentArrow = true;
+                m_isSelectArrow = false;
                 BorderColor = new SolidColorBrush(draw.borderColor);
                 FillColor = new SolidColorBrush(draw.fillColor);
                 RotateAngle = draw.angleOnXY * 360 / (2 * Math.PI);

@@ -15,177 +15,22 @@ namespace WPGIS.Core
     /// <summary>
     /// 简单箭头标绘
     /// </summary>
-    public class SimpleArrowDraw : IDrawInterface
+    public class SimpleArrowDraw : SimpleDrawBase
     {
-        private int m_id = 0;
-        private string m_name = "";
-        private bool m_isSelected = false;
-        private Graphic m_graphicHead = null;
-        private SceneView m_sceneView = null;
-        private SimpleFillSymbol m_fillSymbol = null;
-        private GraphicsOverlay m_drapedOverlay = null;
+      
         private ControlPointManager m_controlPointManager = null;
         private IList<Vector2D> m_headPoints = new List<Vector2D>();
-        private Color m_fillColor = Color.FromArgb(160, 255, 0, 0);
-        private Color m_borderColor = Color.FromArgb(180, 0, 255, 0);
-        private Color m_selectedColor = Color.FromArgb(255, 0, 255, 255);
-        private int m_defaultBorderSize = 1;
-        private int m_focusBorderSize = 3;
-
-        //箭头位置
-        private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
-        //箭头xy平面旋转角度（弧度）             
-        private double m_rotOnXY = 0.0;
-        //编辑模式
-        private Edit_Type m_editType = Edit_Type.Edit_None;
-        //是否需要刷新
-        private bool m_needRefresh = false;
 
         //当前选中的控制点
         private IControlPoint m_selectedCtrlPoint = null;
         //选中控制点的事件
-        public event SelectCtrlPointEventHandler selectCtrlPointEvent;
+        public override event SelectCtrlPointEventHandler SelectCtrlPointEvent;
 
-        public int ID
-        {
-            get
-            {
-                return m_id;
-            }
 
-            set
-            {
-                m_id = value;
-            }
-        }
-
-        public string name
-        {
-            get
-            {
-                return m_name;
-            }
-
-            set
-            {
-                m_name = value;
-            }
-        }
-
-        public Graphic graphic
-        {
-            get
-            {
-                return m_graphicHead;
-            }
-        }
-
-        public bool visible
-        {
-            get
-            {
-                return m_graphicHead.IsVisible;
-            }
-            set
-            {
-                m_graphicHead.IsVisible = value;
-            }
-        }
-
-        /// <summary>
-        /// 返回编辑模式
-        /// </summary>
-        public Edit_Type editType
-        {
-            get
-            {
-                return m_editType;
-            }
-        }
-
-        /// <summary>
-        /// 场景位置
-        /// </summary>
-        public MapPoint mapPosition
-        {
-            get
-            {
-                IControlPoint ctrlPnt = m_controlPointManager.getControlPoint(0);
-                return m_pos;
-            }
-        }
-        /// <summary>
-        /// xy平面旋转角度
-        /// </summary>
-        public double angleOnXY
-        {
-            get
-            {
-                return m_rotOnXY;
-            }
-            set
-            {
-                rotateOnXY(value - m_rotOnXY, true);
-                m_rotOnXY = value;
-            }
-        }
-
-        public bool selected
-        {
-            get
-            {
-                return m_isSelected;
-            }
-            set
-            {
-                m_isSelected = value;
-                if (m_isSelected)
-                {
-                    m_fillSymbol.Outline.Color = m_selectedColor;
-                    m_fillSymbol.Outline.Width = m_focusBorderSize;
-                }
-                else
-                {
-                    m_fillSymbol.Outline.Color = m_borderColor;
-                    m_fillSymbol.Outline.Width = m_defaultBorderSize;
-                }
-            }
-        }
-        /// <summary>
-        /// 填充颜色
-        /// </summary>
-        public Color fillColor
-        {
-            get
-            {
-                return m_fillColor;
-            }
-            set
-            {
-                m_fillColor = value;
-                m_fillSymbol.Color = m_fillColor;
-            }
-        }
-        /// <summary>
-        /// 边框颜色
-        /// </summary>
-        public Color borderColor
-        {
-            get
-            {
-                return m_borderColor;
-            }
-            set
-            {
-                m_borderColor = value;
-                m_fillSymbol.Outline.Color = m_borderColor;
-            }
-        }
-
-        public SimpleArrowDraw(SceneView sceneView, GraphicsOverlay gpsOverlay)
+        public SimpleArrowDraw(SceneView sceneView)
+            :base(sceneView)
         {
             m_sceneView = sceneView;
-            m_drapedOverlay = gpsOverlay;
             m_controlPointManager = new ControlPointManager();
             m_controlPointManager.initialize(m_sceneView);
             //初始化6个箭头控制点
@@ -207,23 +52,14 @@ namespace WPGIS.Core
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
         }
 
-        public void update()
-        {
-            if (m_needRefresh)
-            {
-                //refresh();
-            }
-        }
-
         /// <summary>
         /// 修改形状(通过修改当前控制点位置)
         /// </summary>
         /// <param name="pnt">输入控制点位置</param>
-        public void doEdit(MapPoint pnt)
+        public override void doEdit(MapPoint pnt)
         {
             if (null == m_selectedCtrlPoint) return;
             m_selectedCtrlPoint.mapPosition = pnt;
-            //m_needRefresh = true;
             refresh();
         }
 
@@ -235,14 +71,14 @@ namespace WPGIS.Core
         private async void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             IControlPoint selectPnt = await m_controlPointManager.identifyControlPoint(e.GetPosition(m_sceneView));
-            if (selectPnt != null && selectCtrlPointEvent != null)
+            if (selectPnt != null)
             {
-                selectCtrlPointEvent(selectPnt);
+                SelectCtrlPointEvent?.Invoke(selectPnt);
                 m_selectedCtrlPoint = selectPnt;
             }
         }
 
-        public void moveTo(MapPoint pnt)
+        public override void moveTo(MapPoint pnt)
         {
             m_pos = pnt;
             MapPoint p0 = m_controlPointManager.getControlPoint(0).mapPosition;
@@ -271,13 +107,12 @@ namespace WPGIS.Core
             m_controlPointManager.getControlPoint(5).mapPosition = pDes5;
             m_controlPointManager.getControlPoint(6).mapPosition = pDes6;
 
-            //m_needRefresh = true;
             refresh();
         }
         /// <summary>
         /// 开启旋转模式
         /// </summary>
-        public void startRotate()
+        public override void startRotate()
         {
             m_editType = Edit_Type.Edit_Rotate;
             selected = true;
@@ -286,7 +121,7 @@ namespace WPGIS.Core
         /// 在xy平面旋转
         /// </summary>
         /// <param name="delta">角度</param>
-        public void rotateOnXY(double delta, bool focusRefresh)
+        public override void rotateOnXY(double delta, bool focusRefresh)
         {
             m_rotOnXY += delta;
             if(m_rotOnXY >= 2 * Math.PI)
@@ -313,17 +148,12 @@ namespace WPGIS.Core
             if (focusRefresh)
             {
                 refresh();
-                m_needRefresh = false;
-            }
-            else
-            {
-                m_needRefresh = true;
             }
         }
         /// <summary>
         /// 结束旋转模式
         /// </summary>
-        public void endRotate()
+        public override void endRotate()
         {
             m_editType = Edit_Type.Edit_None;
             selected = false;
@@ -335,15 +165,15 @@ namespace WPGIS.Core
             refreshGeometry();
         }
 
-        public void initGraphic()
+        public override void initGraphic()
         {
             //添加面要素
             m_fillSymbol = new SimpleFillSymbol(SimpleFillSymbolStyle.Solid, m_fillColor, null);
             m_fillSymbol.Outline = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_borderColor, 1);
             PointCollection points = new PointCollection(SpatialReferences.Wgs84);
             Polygon tPolygon = new Polygon(points);
-            m_graphicHead = new Graphic(tPolygon, m_fillSymbol);
-            m_drapedOverlay.Graphics.Add(m_graphicHead);
+            m_graphic = new Graphic(tPolygon, m_fillSymbol);
+            m_gpOverlay.Graphics.Add(m_graphic);
 
             refresh();
         }
@@ -351,7 +181,7 @@ namespace WPGIS.Core
         /// <summary>
         /// 开始编辑模式
         /// </summary>
-        public void startEdit()
+        public override void startEdit()
         {
             m_selectedCtrlPoint = null;
             m_editType = Edit_Type.Edit_Geometry;
@@ -373,7 +203,7 @@ namespace WPGIS.Core
         /// <summary>
         /// 结束编辑模式
         /// </summary>
-        public void endEdit()
+        public override void endEdit()
         {
             m_selectedCtrlPoint = null;
             m_editType = Edit_Type.Edit_None;
@@ -586,14 +416,14 @@ namespace WPGIS.Core
                     pointsHead.Add(mPnt);
                 }
                 Polygon tPolygonHead = new Polygon(pointsHead);
-                m_graphicHead.Geometry = tPolygonHead;
+                m_graphic.Geometry = tPolygonHead;
             }           
         }
 
         /// <summary>
         /// 开启移动模式
         /// </summary>
-        public void startMove()
+        public override void startMove()
         {
             m_editType = Edit_Type.Edit_Transfer;
             selected = true;
@@ -602,7 +432,7 @@ namespace WPGIS.Core
         /// <summary>
         /// 结束移动模式
         /// </summary>
-        public void endMove()
+        public override void endMove()
         {
             m_editType = Edit_Type.Edit_None;
             selected = false;
@@ -611,7 +441,7 @@ namespace WPGIS.Core
         /// <summary>
         /// 停止
         /// </summary>
-        public void stopAll()
+        public override void stopAll()
         {
             if (m_editType == Edit_Type.Edit_Geometry)
             {
@@ -639,8 +469,8 @@ namespace WPGIS.Core
                     // TODO: 释放托管状态(托管对象)。
                     visible = false;
                     m_headPoints.Clear();
-                    m_drapedOverlay.Graphics.Remove(m_graphicHead);
-                    m_graphicHead = null;
+                    m_gpOverlay.Graphics.Remove(m_graphic);
+                    m_graphic = null;
                     m_fillSymbol = null;
                     m_controlPointManager.clear();
                 }
@@ -659,7 +489,7 @@ namespace WPGIS.Core
         // }
 
         // 添加此代码以正确实现可处置模式。
-        public void Dispose()
+        public override void Dispose()
         {
             // 请勿更改此代码。将清理代码放入以上 Dispose(bool disposing) 中。
             Dispose(true);

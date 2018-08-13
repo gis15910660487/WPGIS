@@ -65,6 +65,8 @@
     <Compile Include="DrawManager.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RotateEditor.cs" />
+    <Compile Include="SimpleDrawBase.cs" />
+    <Compile Include="SimpleModelDraw.cs" />
     <Compile Include="ViewModels\SceneViewModel.cs" />
     <Compile Include="SimpleArrowDraw.cs" />
     <Compile Include="ViewModels\ToolbarViewModel.cs" />
