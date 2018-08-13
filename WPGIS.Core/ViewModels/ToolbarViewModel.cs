@@ -167,7 +167,7 @@ namespace WPGIS.Core
 
                 if (DrawManager.getInst().getCurrentDraw() != null)
                 {
-                    DrawManager.getInst().getCurrentDraw().angleOnXY = m_model.RotateAngle * 2 * Math.PI / 360;
+                    DrawManager.getInst().setRotateAngle(m_model.RotateAngle * 2 * Math.PI / 360);
                 }
             }
         }

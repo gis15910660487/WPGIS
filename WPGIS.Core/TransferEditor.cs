@@ -275,15 +275,15 @@ namespace WPGIS.Core
             MapPoint renderPos = new MapPoint(pos.X, pos.Y, m_relativeHeight, pos.SpatialReference);
 
             //先在原点位置计算放大后各轴终点的坐标
-            double newSize = CommonUtil.getInst().meter2degree(m_initSize * m_scale);
+            double newSize = CommonUtil.getInst().meter2degree(m_initSize * scale);
             Vector3D xAxisPointEnd = new Vector3D(newSize, 0, 0);
             Vector3D yAxisPointEnd = new Vector3D(0, newSize, 0);
-            Vector3D zAxisPointEnd = new Vector3D(0, 0, m_initSize * m_scale);
+            Vector3D zAxisPointEnd = new Vector3D(0, 0, m_initSize * scale);
             //然后继续在原点位置计算各轴终点旋转后的坐标
-            if (m_rotOnXY > 0)
+            if (angle > 0)
             {
-                xAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(xAxisPointEnd, m_rotOnXY);
-                yAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(yAxisPointEnd, m_rotOnXY);
+                xAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(xAxisPointEnd, angle);
+                yAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(yAxisPointEnd, angle);
             }
 
             //平移计算
@@ -291,6 +291,10 @@ namespace WPGIS.Core
             var yAxisEndMapPoint = new MapPoint(renderPos.X + yAxisPointEnd.X, renderPos.Y + yAxisPointEnd.Y, renderPos.Z + yAxisPointEnd.Z, renderPos.SpatialReference);
             var zAxisEndMapPoint = new MapPoint(renderPos.X + zAxisPointEnd.X, renderPos.Y + zAxisPointEnd.Y, renderPos.Z + zAxisPointEnd.Z, renderPos.SpatialReference);
 
+            m_spereSymbol.Width = m_initSize * scale / 5;
+            m_spereSymbol.Height = m_initSize * scale / 5;
+            m_spereSymbol.Depth = m_initSize * scale / 5;
+            m_spereSymbol.Heading = angle;
             m_spereGraphic.Geometry = renderPos;
 
             m_xAxiMarkGraphic.Geometry = xAxisEndMapPoint;
@@ -358,6 +362,49 @@ namespace WPGIS.Core
             MapPointChangedEvent?.Invoke(m_pos);
         }
 
+        /// <summary>
+        /// 沿指定轴移动到屏幕点击位置
+        /// </summary>
+        /// <param name="hintPnt">屏幕点击位置</param>
+        /// <param name="pGrahic">轴</param>
+        private void moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
+        {
+            Polyline tline = pGrahic.Geometry as Polyline;
+            MapPoint mapBeginPnt = tline.Parts[0].Points[0];
+            MapPoint mapEndPnt = tline.Parts[0].Points[1];
+            ScreenPoint scBeginPnt = m_sceneView.LocationToScreen(mapBeginPnt);
+            ScreenPoint scEndPnt = m_sceneView.LocationToScreen(mapEndPnt);
+
+            //移动的二维向量
+            Vector2D vecMove = new Vector2D(hintPnt.X - m_moveBeginPoint.X, hintPnt.Y - m_moveBeginPoint.Y);
+            //x轴在屏幕上的二维向量
+            Vector2D vecAxis = new Vector2D(scEndPnt.X - scBeginPnt.X, scEndPnt.Y - scBeginPnt.Y);
+            double dotValue = vecMove.Dot(vecAxis);
+            if (Math.Abs(dotValue) < 0.000001) return;
+
+            Vector2D vecMoveProject = vecAxis * (vecAxis.Dot(vecMove) / vecAxis.MagnitudeSquared);
+            //移动比例
+            double dRatio = vecMoveProject.Magnitude / vecAxis.Magnitude;
+
+            Vector3D mapVec = new Vector3D(mapBeginPnt.X - mapEndPnt.X, mapBeginPnt.Y - mapEndPnt.Y, mapBeginPnt.Z - mapEndPnt.Z);
+            if (dotValue > 0)
+            {
+                mapVec = -mapVec;
+            }
+            double mapLength = mapVec.Magnitude;
+            double moveLength = mapLength * dRatio;
+            //计算出移动的向量增量
+            m_moveDelta = mapVec.Normalize() * Math.Abs(moveLength);
+            //更新位置并重绘
+            m_pos = new MapPoint(m_pos.X + m_moveDelta.X, m_pos.Y + m_moveDelta.Y, m_pos.Z + m_moveDelta.Z, m_pos.SpatialReference);
+            refreshGeometry(m_pos, m_scale, m_rotOnXY);
+
+            //触发位置改变事件
+            MapPointChangedEvent?.Invoke(m_pos);
+
+            m_moveBeginPoint = hintPnt;
+        }
+
         private void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (!m_isVisible || m_sceneView == null) return;
@@ -370,10 +417,25 @@ namespace WPGIS.Core
             {
                 //移动坐标轴
                 ScreenPoint hintPnt = e.GetPosition(m_sceneView);
-                MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
-                if (mPnt != null)
+                if (m_currentAxisType == Axis_Type.Axis_X)
                 {
-                    moveTo(mPnt);
+                    moveByAxis(hintPnt, m_xAxisGraphic);
+                }
+                else if (m_currentAxisType == Axis_Type.Axis_Y)
+                {
+                    moveByAxis(hintPnt, m_yAxisGraphic);
+                }
+                else if (m_currentAxisType == Axis_Type.Axis_Z)
+                {
+                    moveByAxis(hintPnt, m_zAxisGraphic);
+                }
+                else
+                {
+                    MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
+                    if (mPnt != null)
+                    {
+                        moveTo(mPnt);
+                    }
                 }
             }
         }

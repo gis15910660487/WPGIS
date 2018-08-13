@@ -89,6 +89,22 @@ namespace WPGIS.Core
         }
 
         /// <summary>
+        /// 设置旋转角度
+        /// </summary>
+        /// <param name="angle">角度(弧度)</param>
+        public void setRotateAngle(double angle)
+        {
+            if(m_editDraw != null)
+            {
+                m_editDraw.angleOnXY = angle;
+            }
+            if(m_transferEditor != null && m_transferEditor.visible)
+            {
+                m_transferEditor.setRotOnXY(angle);
+            }
+        }
+
+        /// <summary>
         /// 开启移动模式
         /// </summary>
         /// <param name="draw">标绘实体</param>
