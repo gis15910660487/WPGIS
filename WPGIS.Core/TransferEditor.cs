@@ -94,15 +94,20 @@ namespace WPGIS.Core
             m_focusColor = Color.FromArgb(200, 255, 255, 0);
 
             initEditor();
-            visible = false;
+            visible = false;            
 
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
             m_sceneView.PreviewMouseMove += sceneView_MouseMove;
-            m_sceneView.NavigationCompleted += sceneView_NavigationCompleted;
+            m_sceneView.ViewpointChanged += OnViewpointChanged;
         }
 
-        private void sceneView_NavigationCompleted(object sender, EventArgs e)
+        private void OnViewpointChanged(object sender, EventArgs e)
+        {
+            ResizeScaleFromCamera();
+        }
+
+        private void ResizeScaleFromCamera()
         {
             var camera = m_sceneView.Camera;
             var horDist = GeometryEngine.DistanceGeodetic(camera.Location, m_pos, LinearUnits.Meters, AngularUnits.Degrees, GeodeticCurveType.Geodesic);
@@ -244,7 +249,7 @@ namespace WPGIS.Core
         {
             if (m_pos.IsEqual(pos)) return;
             m_pos = pos;
-            refreshGeometry(m_pos, m_scale, m_rotOnXY);
+            ResizeScaleFromCamera();
         }
         /// <summary>
         /// 返回编辑器的地图位置
