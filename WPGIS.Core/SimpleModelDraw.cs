@@ -11,16 +11,18 @@ using Esri.ArcGISRuntime.UI;
 using Esri.ArcGISRuntime.UI.Controls;
 using WPGIS.DataType;
 using Esri.ArcGISRuntime.Symbology;
+using Esri.ArcGISRuntime.Mapping;
 
 namespace WPGIS.Core
 {
     public class SimpleModelDraw : SimpleDrawBase
     {
-        private const string VEHICLE_RES_FILE = @"resources\models\Vehicle.obj";
+        private const string VEHICLE_RES_FILE = @"resources\models\Aircraft_size.dae";
 
         public SimpleModelDraw(SceneView sceneView)
             : base(sceneView)
         {
+            m_gpOverlay.SceneProperties.SurfacePlacement = SurfacePlacement.Absolute;
         }
 
         public override async void initGraphic()
@@ -29,19 +31,33 @@ namespace WPGIS.Core
             if (System.IO.File.Exists(modelFile))
             {
 
-                ModelSceneSymbol symbol = await ModelSceneSymbol.CreateAsync(new Uri(modelFile), 0.1);
-                symbol.Heading = 180;
-                symbol.Pitch = -90;
+                ModelSceneSymbol symbol = await ModelSceneSymbol.CreateAsync(new Uri(modelFile), 10);
+                symbol.Heading = 0;
+                symbol.Pitch = 0;
                 symbol.AnchorPosition = SceneSymbolAnchorPosition.Bottom;
 
-                m_graphic = new Graphic(new MapPoint(0, 0, 0, SpatialReferences.Wgs84), symbol);
+                m_graphic = new Graphic(new MapPoint(0, 0, 0, SpatialReferences.WebMercator), symbol);
                 m_gpOverlay.Graphics.Add(m_graphic);
+            }
+        }
+
+        public override void rotateOnXY(double delta, bool focusRefresh)
+        {
+            base.rotateOnXY(delta, focusRefresh);
+            if(m_graphic != null)
+            {
+                ModelSceneSymbol symbol = m_graphic.Symbol as ModelSceneSymbol;
+                if(symbol != null)
+                {
+                    symbol.Heading = (2 * Math.PI- m_rotOnXY) * 180 / Math.PI;
+                }
             }
         }
 
         public override void moveTo(MapPoint pnt)
         {
-            if(m_graphic != null)
+            m_pos = pnt;
+            if (m_graphic != null)
             {
                 m_graphic.Geometry = pnt;
             }

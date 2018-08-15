@@ -34,13 +34,13 @@ namespace WPGIS.Core
             m_controlPointManager = new ControlPointManager();
             m_controlPointManager.initialize(m_sceneView);
             //初始化6个箭头控制点
-            MapPoint p0 = new MapPoint(0, CommonUtil.getInst().meter2degree(2000.0), 0, SpatialReferences.Wgs84);
-            MapPoint p1 = new MapPoint(0, CommonUtil.getInst().meter2degree(1500.0), 0, SpatialReferences.Wgs84);
-            MapPoint p2 = new MapPoint(0, CommonUtil.getInst().meter2degree(1000.0), 0, SpatialReferences.Wgs84);
-            MapPoint p3 = new MapPoint(0, CommonUtil.getInst().meter2degree(500.0), 0, SpatialReferences.Wgs84);
-            MapPoint p4 = new MapPoint(CommonUtil.getInst().meter2degree(-500.0), 0, 0, SpatialReferences.Wgs84);
-            MapPoint p5 = new MapPoint(CommonUtil.getInst().meter2degree(500.0), 0, 0, SpatialReferences.Wgs84);
-            MapPoint p6 = new MapPoint(0, CommonUtil.getInst().meter2degree(200.0), 0, SpatialReferences.Wgs84);
+            MapPoint p0 = new MapPoint(0, CommonUtil.getInst().meter2degree(2000.0), 0, SpatialReferences.WebMercator);
+            MapPoint p1 = new MapPoint(0, CommonUtil.getInst().meter2degree(1500.0), 0, SpatialReferences.WebMercator);
+            MapPoint p2 = new MapPoint(0, CommonUtil.getInst().meter2degree(1000.0), 0, SpatialReferences.WebMercator);
+            MapPoint p3 = new MapPoint(0, CommonUtil.getInst().meter2degree(500.0), 0, SpatialReferences.WebMercator);
+            MapPoint p4 = new MapPoint(CommonUtil.getInst().meter2degree(-500.0), 0, 0, SpatialReferences.WebMercator);
+            MapPoint p5 = new MapPoint(CommonUtil.getInst().meter2degree(500.0), 0, 0, SpatialReferences.WebMercator);
+            MapPoint p6 = new MapPoint(0, CommonUtil.getInst().meter2degree(200.0), 0, SpatialReferences.WebMercator);
             m_controlPointManager.createControlPoint(p0);
             m_controlPointManager.createControlPoint(p1);
             m_controlPointManager.createControlPoint(p2);
@@ -155,7 +155,7 @@ namespace WPGIS.Core
             //添加面要素
             m_fillSymbol = new SimpleFillSymbol(SimpleFillSymbolStyle.Solid, m_fillColor, null);
             m_fillSymbol.Outline = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_borderColor, 1);
-            PointCollection points = new PointCollection(SpatialReferences.Wgs84);
+            PointCollection points = new PointCollection(SpatialReferences.WebMercator);
             Polygon tPolygon = new Polygon(points);
             m_graphic = new Graphic(tPolygon, m_fillSymbol);
             m_gpOverlay.Graphics.Add(m_graphic);
@@ -386,7 +386,7 @@ namespace WPGIS.Core
 
         private MapPoint convert2MapPoint(Vector2D pnt2d)
         {
-            return new MapPoint(pnt2d.X, pnt2d.Y, 0.0, SpatialReferences.Wgs84);
+            return new MapPoint(pnt2d.X, pnt2d.Y, 0.0, SpatialReferences.WebMercator);
         }
 
         /// <summary>
@@ -396,7 +396,7 @@ namespace WPGIS.Core
         {
             lock (this)
             {
-                PointCollection pointsHead = new PointCollection(SpatialReferences.Wgs84);
+                PointCollection pointsHead = new PointCollection(SpatialReferences.WebMercator);
                 foreach (var pnt2d in m_headPoints)
                 {
                     MapPoint mPnt = convert2MapPoint(pnt2d);

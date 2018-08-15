@@ -34,7 +34,7 @@ namespace WPGIS.Core
 
         public event MapPointChangedEventHandler MapPointChangedEvent = null;
         //编辑器位置
-        private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
+        private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.WebMercator);
         //编辑器xy平面旋转角度（弧度）             
         private double m_rotOnXY = 0.0;
         //编辑器放大系数(默认1)
@@ -110,7 +110,8 @@ namespace WPGIS.Core
         private void ResizeScaleFromCamera()
         {
             var camera = m_sceneView.Camera;
-            var horDist = GeometryEngine.DistanceGeodetic(camera.Location, m_pos, LinearUnits.Meters, AngularUnits.Degrees, GeodeticCurveType.Geodesic);
+            MapPoint cameraPnt = new MapPoint(camera.Location.X, camera.Location.Y, camera.Location.Z, m_pos.SpatialReference);
+            var horDist = GeometryEngine.DistanceGeodetic(cameraPnt, m_pos, LinearUnits.Meters, AngularUnits.Degrees, GeodeticCurveType.Geodesic);
             var dist = Math.Sqrt(Math.Pow(horDist.Distance, 2) + Math.Pow(camera.Location.Z - m_pos.Z, 2));
             m_scale = (float)dist / 10000;
             if (m_scale < 1.0f) m_scale = 1.0f;
@@ -145,10 +146,10 @@ namespace WPGIS.Core
         public void initEditor()
         {
             m_gpOverlayAxis = new GraphicsOverlay();
-            m_gpOverlayAxis.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
+            m_gpOverlayAxis.SceneProperties.SurfacePlacement = SurfacePlacement.Absolute;
             m_sceneView.GraphicsOverlays.Add(m_gpOverlayAxis);
             m_gpOverlayMark = new GraphicsOverlay();
-            m_gpOverlayMark.SceneProperties.SurfacePlacement = SurfacePlacement.Relative;
+            m_gpOverlayMark.SceneProperties.SurfacePlacement = SurfacePlacement.Absolute;
             m_sceneView.GraphicsOverlays.Add(m_gpOverlayMark);
 
             //初始化球
@@ -161,7 +162,7 @@ namespace WPGIS.Core
                 Depth = m_initSize / 5,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84);
+            var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.WebMercator);
             m_spereGraphic = new Graphic(location, m_spereSymbol);
             m_gpOverlayAxis.Graphics.Add(m_spereGraphic);
 
@@ -173,7 +174,7 @@ namespace WPGIS.Core
 
             double agreeScale = CommonUtil.getInst().meter2degree(m_initSize);
             //初始化x轴            
-            PointCollection pointsX = new PointCollection(SpatialReferences.Wgs84)
+            PointCollection pointsX = new PointCollection(SpatialReferences.WebMercator)
                 {
                     new MapPoint(0, 0, m_relativeHeight),
                     new MapPoint(agreeScale, 0, m_relativeHeight),
@@ -196,10 +197,10 @@ namespace WPGIS.Core
             m_gpOverlayMark.Graphics.Add(m_xAxiMarkGraphic);
 
             //初始化y轴            
-            PointCollection pointsY = new PointCollection(SpatialReferences.Wgs84)
+            PointCollection pointsY = new PointCollection(SpatialReferences.WebMercator)
                 {
-                    new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84),
-                    new MapPoint(0, agreeScale, m_relativeHeight, SpatialReferences.Wgs84),
+                    new MapPoint(0, 0, m_relativeHeight, SpatialReferences.WebMercator),
+                    new MapPoint(0, agreeScale, m_relativeHeight, SpatialReferences.WebMercator),
                 };
             Polyline polylineYAxis = new Polyline(pointsY);
             m_yAxisGraphic = new Graphic(polylineYAxis, m_yAxisSymbol);
@@ -219,7 +220,7 @@ namespace WPGIS.Core
             m_gpOverlayMark.Graphics.Add(m_yAxiMarkGraphic);
 
             //初始化z轴            
-            PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
+            PointCollection pointsZ = new PointCollection(SpatialReferences.WebMercator)
                 {
                     new MapPoint(0, 0, m_relativeHeight),
                     new MapPoint(0, 0, m_initSize + m_relativeHeight),
@@ -279,12 +280,12 @@ namespace WPGIS.Core
         }
         private void refreshGeometry(MapPoint pos, float scale, double angle)
         {
-            MapPoint renderPos = new MapPoint(pos.X, pos.Y, m_relativeHeight, pos.SpatialReference);
+            MapPoint renderPos = new MapPoint(pos.X, pos.Y, pos.Z, pos.SpatialReference);
 
             //先在原点位置计算放大后各轴终点的坐标
             double newSize = CommonUtil.getInst().meter2degree(m_initSize * scale);
-            Vector3D xAxisPointEnd = new Vector3D(newSize, 0, 0);
-            Vector3D yAxisPointEnd = new Vector3D(0, newSize, 0);
+            Vector3D xAxisPointEnd = new Vector3D(m_initSize * scale, 0, 0);
+            Vector3D yAxisPointEnd = new Vector3D(0, m_initSize * scale, 0);
             Vector3D zAxisPointEnd = new Vector3D(0, 0, m_initSize * scale);
             //然后继续在原点位置计算各轴终点旋转后的坐标
             if (angle > 0)
@@ -292,16 +293,21 @@ namespace WPGIS.Core
                 xAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(xAxisPointEnd, angle);
                 yAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(yAxisPointEnd, angle);
             }
+            //转经纬度            
+            double dXAxisPointEndX = CommonUtil.getInst().meter2degree(xAxisPointEnd.X);
+            double dXAxisPointEndY = CommonUtil.getInst().meter2degree(xAxisPointEnd.Y);
+            double dYAxisPointEndX = CommonUtil.getInst().meter2degree(yAxisPointEnd.X);
+            double dYAxisPointEndY = CommonUtil.getInst().meter2degree(yAxisPointEnd.Y);
 
             //平移计算
-            var xAxisEndMapPoint = new MapPoint(renderPos.X + xAxisPointEnd.X, renderPos.Y + xAxisPointEnd.Y, renderPos.Z + xAxisPointEnd.Z, renderPos.SpatialReference);
-            var yAxisEndMapPoint = new MapPoint(renderPos.X + yAxisPointEnd.X, renderPos.Y + yAxisPointEnd.Y, renderPos.Z + yAxisPointEnd.Z, renderPos.SpatialReference);
+            var xAxisEndMapPoint = new MapPoint(renderPos.X + dXAxisPointEndX, renderPos.Y + dXAxisPointEndY, renderPos.Z + xAxisPointEnd.Z, renderPos.SpatialReference);
+            var yAxisEndMapPoint = new MapPoint(renderPos.X + dYAxisPointEndX, renderPos.Y + dYAxisPointEndY, renderPos.Z + yAxisPointEnd.Z, renderPos.SpatialReference);
             var zAxisEndMapPoint = new MapPoint(renderPos.X + zAxisPointEnd.X, renderPos.Y + zAxisPointEnd.Y, renderPos.Z + zAxisPointEnd.Z, renderPos.SpatialReference);
 
             m_spereSymbol.Width = m_initSize * scale / 5;
             m_spereSymbol.Height = m_initSize * scale / 5;
             m_spereSymbol.Depth = m_initSize * scale / 5;
-            m_spereSymbol.Heading = angle;
+            m_spereSymbol.Heading = (2 * Math.PI - angle) * 180 / Math.PI; ;
             m_spereGraphic.Geometry = renderPos;
 
             m_xAxiMarkGraphic.Geometry = xAxisEndMapPoint;

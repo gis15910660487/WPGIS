@@ -25,7 +25,7 @@ namespace WPGIS.Core
         protected SimpleFillSymbol m_fillSymbol = null;
         //编辑模式
         protected Edit_Type m_editType = Edit_Type.Edit_None;
-        protected MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
+        protected MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.WebMercator);
 
         protected Color m_fillColor = Color.FromArgb(160, 255, 0, 0);
         protected Color m_borderColor = Color.FromArgb(180, 0, 255, 0);
@@ -117,15 +117,11 @@ namespace WPGIS.Core
             set
             {
                 m_isSelected = value;
-                if (m_isSelected)
+                if (m_graphic != null) m_graphic.IsSelected = m_isSelected;
+                if(m_fillSymbol != null)
                 {
-                    m_fillSymbol.Outline.Color = m_selectedColor;
-                    m_fillSymbol.Outline.Width = m_focusBorderSize;
-                }
-                else
-                {
-                    m_fillSymbol.Outline.Color = m_borderColor;
-                    m_fillSymbol.Outline.Width = m_defaultBorderSize;
+                    m_fillSymbol.Outline.Color = m_isSelected ? m_selectedColor : m_borderColor;
+                    m_fillSymbol.Outline.Width = m_isSelected ? m_focusBorderSize : m_defaultBorderSize;
                 }
             }
         }
@@ -141,7 +137,10 @@ namespace WPGIS.Core
             set
             {
                 m_fillColor = value;
-                m_fillSymbol.Color = m_fillColor;
+                if(m_fillSymbol != null)
+                {
+                    m_fillSymbol.Color = m_fillColor;
+                }                
             }
         }
         /// <summary>
@@ -156,7 +155,10 @@ namespace WPGIS.Core
             set
             {
                 m_borderColor = value;
-                m_fillSymbol.Outline.Color = m_borderColor;
+                if(m_fillSymbol != null)
+                {
+                    m_fillSymbol.Outline.Color = m_borderColor;
+                }               
             }
         }
         /// <summary>
