@@ -34,7 +34,7 @@ namespace WPGIS.Core
 
         public event MapPointChangedEventHandler MapPointChangedEvent = null;
         //编辑器位置
-        private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.WebMercator);
+        private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
         //编辑器xy平面旋转角度（弧度）             
         private double m_rotOnXY = 0.0;
         //编辑器放大系数(默认1)
@@ -162,7 +162,7 @@ namespace WPGIS.Core
                 Depth = m_initSize / 5,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.WebMercator);
+            var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84);
             m_spereGraphic = new Graphic(location, m_spereSymbol);
             m_gpOverlayAxis.Graphics.Add(m_spereGraphic);
 
@@ -174,7 +174,7 @@ namespace WPGIS.Core
 
             double agreeScale = CommonUtil.getInst().meter2degree(m_initSize);
             //初始化x轴            
-            PointCollection pointsX = new PointCollection(SpatialReferences.WebMercator)
+            PointCollection pointsX = new PointCollection(SpatialReferences.Wgs84)
                 {
                     new MapPoint(0, 0, m_relativeHeight),
                     new MapPoint(agreeScale, 0, m_relativeHeight),
@@ -197,10 +197,10 @@ namespace WPGIS.Core
             m_gpOverlayMark.Graphics.Add(m_xAxiMarkGraphic);
 
             //初始化y轴            
-            PointCollection pointsY = new PointCollection(SpatialReferences.WebMercator)
+            PointCollection pointsY = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, m_relativeHeight, SpatialReferences.WebMercator),
-                    new MapPoint(0, agreeScale, m_relativeHeight, SpatialReferences.WebMercator),
+                    new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84),
+                    new MapPoint(0, agreeScale, m_relativeHeight, SpatialReferences.Wgs84),
                 };
             Polyline polylineYAxis = new Polyline(pointsY);
             m_yAxisGraphic = new Graphic(polylineYAxis, m_yAxisSymbol);
@@ -220,7 +220,7 @@ namespace WPGIS.Core
             m_gpOverlayMark.Graphics.Add(m_yAxiMarkGraphic);
 
             //初始化z轴            
-            PointCollection pointsZ = new PointCollection(SpatialReferences.WebMercator)
+            PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
                 {
                     new MapPoint(0, 0, m_relativeHeight),
                     new MapPoint(0, 0, m_initSize + m_relativeHeight),

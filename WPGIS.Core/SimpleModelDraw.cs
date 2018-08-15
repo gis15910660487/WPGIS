@@ -36,7 +36,7 @@ namespace WPGIS.Core
                 symbol.Pitch = 0;
                 symbol.AnchorPosition = SceneSymbolAnchorPosition.Bottom;
 
-                m_graphic = new Graphic(new MapPoint(0, 0, 0, SpatialReferences.WebMercator), symbol);
+                m_graphic = new Graphic(new MapPoint(0, 0, 0, SpatialReferences.Wgs84), symbol);
                 m_gpOverlay.Graphics.Add(m_graphic);
             }
         }

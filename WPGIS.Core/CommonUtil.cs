@@ -50,7 +50,7 @@ namespace WPGIS.Core
         public MapPoint convert2Utm(MapPoint lonlatPnt)
         {
             string sUtm = CoordinateFormatter.ToUtm(lonlatPnt, UtmConversionMode.NorthSouthIndicators, true);
-            MapPoint utmPnt = CoordinateFormatter.FromUtm(sUtm, SpatialReferences.WebMercator, UtmConversionMode.NorthSouthIndicators);
+            MapPoint utmPnt = CoordinateFormatter.FromUtm(sUtm, SpatialReferences.Wgs84, UtmConversionMode.NorthSouthIndicators);
             return utmPnt;
         }
 

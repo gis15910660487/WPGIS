@@ -47,7 +47,7 @@ namespace WPGIS.Core
                 Depth = 50,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            var location = new MapPoint(0, 0, 0, SpatialReferences.WebMercator);
+            var location = new MapPoint(0, 0, 0, SpatialReferences.Wgs84);
             m_graphic = new Graphic(location, spereSymbol);
             m_graphic.IsVisible = false;
             m_gpOverlay.Graphics.Add(m_graphic);

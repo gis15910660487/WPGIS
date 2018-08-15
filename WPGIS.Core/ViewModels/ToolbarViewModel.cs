@@ -286,7 +286,7 @@ namespace WPGIS.Core
             }
             m_isSelectArrow = false;
             //需优化，模型（箭头）
-            DrawManager.getInst().createDraw(DrawType.DrawType_SimpleModel);
+            DrawManager.getInst().createDraw(DrawType.DrawType_SimpleArrow);
         }
 
         private void moveArrowClick(object obj)

@@ -40,7 +40,7 @@ namespace WPGIS.Core
         //旋转改变事件
         public event RotateChangedEventHandler RotateChangedEvent = null;
         //编辑器位置
-        private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.WebMercator);
+        private MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
         private MapPoint m_oldPos = null;
         //编辑器放大系数(默认100)
         private float m_scale = 100.0f;
@@ -153,22 +153,22 @@ namespace WPGIS.Core
             m_yAxisSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_yAxisColor, 2);
             m_zAxisSymbol = new SimpleLineSymbol(SimpleLineSymbolStyle.Solid, m_zAxisColor, 2);
 
-            PointCollection pointsXY = new PointCollection(SpatialReferences.WebMercator);
-            PointCollection pointsXZ = new PointCollection(SpatialReferences.WebMercator);
-            PointCollection pointsYZ = new PointCollection(SpatialReferences.WebMercator);
+            PointCollection pointsXY = new PointCollection(SpatialReferences.Wgs84);
+            PointCollection pointsXZ = new PointCollection(SpatialReferences.Wgs84);
+            PointCollection pointsYZ = new PointCollection(SpatialReferences.Wgs84);
             m_subAngleDelta = Math.PI * 2 / (m_subPointCount - 1);
             m_dCircleRadius = CommonUtil.getInst().meter2degree(m_scale);
 
             //剖分圆环点      
             Vector3D startPntXY = new Vector3D(m_dCircleRadius, 0.0, 0.0);
-            pointsXY.Add(new MapPoint(m_dCircleRadius, 0.0, 0.0, SpatialReferences.WebMercator));
+            pointsXY.Add(new MapPoint(m_dCircleRadius, 0.0, 0.0, SpatialReferences.Wgs84));
             for (int i = 1; i < m_subPointCount + 1; i++)
             {
                 Vector3D tPos = CommonUtil.getInst().RotateAroundZAxis(startPntXY, m_subAngleDelta * i);
                 double dMeterz = CommonUtil.getInst().degree2meter(tPos.Y);
-                pointsXY.Add(new MapPoint(tPos.X, tPos.Y, 0.0, SpatialReferences.WebMercator));
-                pointsXZ.Add(new MapPoint(tPos.X, 0.0, dMeterz, SpatialReferences.WebMercator));
-                pointsYZ.Add(new MapPoint(0.0, tPos.X, dMeterz, SpatialReferences.WebMercator));
+                pointsXY.Add(new MapPoint(tPos.X, tPos.Y, 0.0, SpatialReferences.Wgs84));
+                pointsXZ.Add(new MapPoint(tPos.X, 0.0, dMeterz, SpatialReferences.Wgs84));
+                pointsYZ.Add(new MapPoint(0.0, tPos.X, dMeterz, SpatialReferences.Wgs84));
             }
             //初始化xy平面圆环
             Polyline polylineXY = new Polyline(pointsXY);
@@ -177,7 +177,7 @@ namespace WPGIS.Core
 
             double agreeScale = CommonUtil.getInst().meter2degree(m_scale);
             //初始化x轴            
-            PointCollection pointsX = new PointCollection(SpatialReferences.WebMercator)
+            PointCollection pointsX = new PointCollection(SpatialReferences.Wgs84)
                 {
                     new MapPoint(0, 0, 0),
                     new MapPoint(agreeScale, 0, 0),
@@ -200,10 +200,10 @@ namespace WPGIS.Core
             m_gpOverlay.Graphics.Add(m_xAxiMarkGraphic);
 
             //初始化y轴            
-            PointCollection pointsY = new PointCollection(SpatialReferences.WebMercator)
+            PointCollection pointsY = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, 0, SpatialReferences.WebMercator),
-                    new MapPoint(0, agreeScale, 0, SpatialReferences.WebMercator),
+                    new MapPoint(0, 0, 0, SpatialReferences.Wgs84),
+                    new MapPoint(0, agreeScale, 0, SpatialReferences.Wgs84),
                 };
             Polyline polylineYAxis = new Polyline(pointsY);
             m_yAxisGraphic = new Graphic(polylineYAxis, m_yAxisSymbol);
@@ -223,7 +223,7 @@ namespace WPGIS.Core
             m_gpOverlay.Graphics.Add(m_yAxiMarkGraphic);
 
             //初始化z轴            
-            PointCollection pointsZ = new PointCollection(SpatialReferences.WebMercator)
+            PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
                 {
                     new MapPoint(0, 0, 0.1),
                     new MapPoint(0, 0, m_scale),
@@ -289,7 +289,7 @@ namespace WPGIS.Core
                 Polyline tline = pGraphic.Geometry as Polyline;
                 ReadOnlyPart part = tline.Parts[0];
                 if (null == part || part.PointCount <= 0) return;
-                PointCollection points = new PointCollection(SpatialReferences.WebMercator);
+                PointCollection points = new PointCollection(SpatialReferences.Wgs84);
                 int iPntSize = part.PointCount;
                 for (int i = 0; i < iPntSize; i++)
                 {
@@ -304,7 +304,7 @@ namespace WPGIS.Core
             else if (pGraphic.Geometry.GeometryType == GeometryType.Point)
             {
                 MapPoint tPnt = pGraphic.Geometry as MapPoint;
-                MapPoint newPnt = new MapPoint(tPnt.X + moveDelta.X, tPnt.Y + moveDelta.Y, tPnt.Z + moveDelta.Z, SpatialReferences.WebMercator);
+                MapPoint newPnt = new MapPoint(tPnt.X + moveDelta.X, tPnt.Y + moveDelta.Y, tPnt.Z + moveDelta.Z, SpatialReferences.Wgs84);
                 pGraphic.Geometry = newPnt;
             }
         }
@@ -341,7 +341,7 @@ namespace WPGIS.Core
                 }
 
                 double dAngleBegin, dAngleEnd;
-                PointCollection pointsXY = new PointCollection(SpatialReferences.WebMercator);
+                PointCollection pointsXY = new PointCollection(SpatialReferences.Wgs84);
                 if (m_angleDetltaTotal < 0)
                 {
                     dAngleBegin = m_rotateBeginAngle + m_angleDetltaTotal;
@@ -360,7 +360,7 @@ namespace WPGIS.Core
                 {
                     tAngle = dAngleBegin + m_subAngleDelta * iIndex;
                     Vector3D tPos = CommonUtil.getInst().RotateAroundZAxis(startPntXY, tAngle);
-                    pointsXY.Add(new MapPoint(tPos.X, tPos.Y, 0.0, SpatialReferences.WebMercator));
+                    pointsXY.Add(new MapPoint(tPos.X, tPos.Y, 0.0, SpatialReferences.Wgs84));
                     iIndex++;
                 }
                 pointsXY.Add(m_pos);

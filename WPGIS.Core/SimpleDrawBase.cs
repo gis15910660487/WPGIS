@@ -25,7 +25,7 @@ namespace WPGIS.Core
         protected SimpleFillSymbol m_fillSymbol = null;
         //编辑模式
         protected Edit_Type m_editType = Edit_Type.Edit_None;
-        protected MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.WebMercator);
+        protected MapPoint m_pos = new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84);
 
         protected Color m_fillColor = Color.FromArgb(160, 255, 0, 0);
         protected Color m_borderColor = Color.FromArgb(180, 0, 255, 0);
