@@ -10,6 +10,9 @@
                 <Button Name="btnDrawArrow" Command="{Binding DrawArrowCmd}" ToolTip="拖动部署箭头">
                     <Image Source="/WPGIS;component/Images/arrow.png" Width="40" Height="40"/>
                 </Button>
+                <Button Name="btnDrawModel" Command="{Binding DrawModelCmd}" ToolTip="拖动部署模型">
+                    <Image Source="/WPGIS;component/Images/arrow.png" Width="40" Height="40"/>
+                </Button>
                 <Button Name="btnSelectArrow" Command="{Binding SelectArrowCmd}" ToolTip="拾取箭头">
                     <Image Name="imgSelectArrow" Source="/WPGIS;component/Images/CircleSelect.png" Width="40" Height="40"/>
                 </Button>

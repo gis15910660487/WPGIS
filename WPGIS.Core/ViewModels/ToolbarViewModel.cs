@@ -35,6 +35,7 @@ namespace WPGIS.Core
             this.EditArrowCmd = new DelegateCommand(new Action<object>(this.editArrowClick));
             this.SelectArrowCmd = new DelegateCommand(new Action<object>(this.selectArrowClick));
             this.DrawArrowCmd = new DelegateCommand(new Action<object>(this.drawArrowClick));
+            this.DrawModelCmd = new DelegateCommand(new Action<object>(this.drawModelClick));
             this.MoveArrowCmd = new DelegateCommand(new Action<object>(this.moveArrowClick));
 
             DrawManager.getInst().CurrentArrowChangedEvent += toolbar_CurrentArrowChangedEvent;
@@ -85,6 +86,10 @@ namespace WPGIS.Core
         /// 部署箭头命令
         /// </summary>
         public DelegateCommand DrawArrowCmd { get; set; }
+        /// <summary>
+        /// 部署模型命令
+        /// </summary>
+        public DelegateCommand DrawModelCmd { get; set; }
         /// <summary>
         /// 移动箭头命令
         /// </summary>
@@ -285,8 +290,19 @@ namespace WPGIS.Core
                 return;
             }
             m_isSelectArrow = false;
-            //需优化，模型（箭头）
+            //箭头
             DrawManager.getInst().createDraw(DrawType.DrawType_SimpleArrow);
+        }
+
+        private void drawModelClick(object obj)
+        {
+            if (DrawManager.getInst().getCurrentEditMode() == Edit_Type.Edit_Create)
+            {
+                return;
+            }
+            m_isSelectArrow = false;
+            //模型
+            DrawManager.getInst().createDraw(DrawType.DrawType_SimpleModel);
         }
 
         private void moveArrowClick(object obj)
