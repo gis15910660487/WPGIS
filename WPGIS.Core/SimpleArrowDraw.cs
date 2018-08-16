@@ -106,22 +106,16 @@ namespace WPGIS.Core
         /// 在xy平面旋转
         /// </summary>
         /// <param name="delta">角度</param>
-        public override void rotateOnXY(double delta, bool focusRefresh)
+        public override void rotateOnXY(double angle, bool focusRefresh)
         {
-            m_rotOnXY += delta;
-            if(m_rotOnXY >= 2 * Math.PI)
-            {
-                m_rotOnXY = m_rotOnXY - 2 * Math.PI;
-            }
-            else if(m_rotOnXY < 0.0)
-            {
-                m_rotOnXY = 2 * Math.PI - m_rotOnXY;
-            }
+            double delta = m_rotOnXY - angle;
+            base.rotateOnXY(angle, focusRefresh);           
             //旋转所有的控制点
             int iCtrlPntSize = m_controlPointManager.getSize();
             for (int i = 0; i < iCtrlPntSize; i++)
             {
                 MapPoint ctrlPnt = m_controlPointManager.getControlPoint(i).mapPosition;
+                
                 //先移到原点
                 Vector3D tVec = new Vector3D(ctrlPnt.X - m_pos.X, ctrlPnt.Y - m_pos.Y, 0.0);
                 Vector3D desVec = CommonUtil.getInst().RotateAroundZAxis(tVec, delta);

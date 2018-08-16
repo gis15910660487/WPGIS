@@ -94,7 +94,7 @@ namespace WPGIS.Core
         {
             if (m_editDraw != null)
             {
-                m_editDraw.angleOnXY = angle;
+                m_editDraw.rotateOnXY(angle, true);
             }
             if (m_transferEditor != null && m_transferEditor.visible)
             {

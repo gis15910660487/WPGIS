@@ -21,7 +21,7 @@ namespace WPGIS.Core
     /// <summary>
     /// 移动辅助编辑器
     /// </summary>
-    public class TransferEditor
+    public class TransferEditor : IDisposable
     {
         private Color m_spereColor;
         private Color m_xAxisColor;
@@ -514,6 +514,27 @@ namespace WPGIS.Core
                     m_currentAxisType = Axis_Type.Axis_XYZ;
                 }
             }
+        }
+
+        public void Dispose()
+        {
+            if (null == m_sceneView) return;
+            m_sceneView.MouseLeftButtonDown -= sceneView_MouseLeftButtonDown;
+            m_sceneView.MouseLeftButtonUp -= sceneView_MouseLeftButtonUp;
+            m_sceneView.PreviewMouseMove -= sceneView_MouseMove;
+            m_sceneView.ViewpointChanged -= OnViewpointChanged;
+
+            if(m_gpOverlayAxis != null)
+            {
+                m_sceneView.GraphicsOverlays.Remove(m_gpOverlayAxis);
+                m_gpOverlayAxis = null;
+            }
+            
+            if(m_gpOverlayMark != null)
+            {
+                m_sceneView.GraphicsOverlays.Remove(m_gpOverlayMark);
+                m_gpOverlayMark = null;
+            }            
         }
     }
 }

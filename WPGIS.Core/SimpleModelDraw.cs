@@ -41,9 +41,9 @@ namespace WPGIS.Core
             }
         }
 
-        public override void rotateOnXY(double delta, bool focusRefresh)
+        public override void rotateOnXY(double angle, bool focusRefresh)
         {
-            base.rotateOnXY(delta, focusRefresh);
+            base.rotateOnXY(angle, focusRefresh);
             if(m_graphic != null)
             {
                 ModelSceneSymbol symbol = m_graphic.Symbol as ModelSceneSymbol;

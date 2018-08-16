@@ -87,8 +87,8 @@ namespace WPGIS.DataType
         /// <summary>
         /// xy平面旋转
         /// </summary>
-        /// <param name="delta">角度</param>
-        void rotateOnXY(double delta, bool focusRefresh);
+        /// <param name="angle">角度</param>
+        void rotateOnXY(double angle, bool focusRefresh);
 
         /// <summary>
         /// 结束旋转模式

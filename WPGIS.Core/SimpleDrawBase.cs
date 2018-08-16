@@ -172,8 +172,8 @@ namespace WPGIS.Core
             }
             set
             {
-                rotateOnXY(value - m_rotOnXY, true);
                 m_rotOnXY = value;
+                rotateOnXY(m_rotOnXY, true);                
             }
         }
 
@@ -211,8 +211,17 @@ namespace WPGIS.Core
         {
         }
 
-        public virtual void rotateOnXY(double delta, bool focusRefresh)
+        public virtual void rotateOnXY(double angle, bool focusRefresh)
         {
+            m_rotOnXY = angle;
+            if (m_rotOnXY >= 2 * Math.PI)
+            {
+                m_rotOnXY = m_rotOnXY - 2 * Math.PI;
+            }
+            else if (m_rotOnXY < 0.0)
+            {
+                m_rotOnXY = 2 * Math.PI - m_rotOnXY;
+            }
         }
 
         public virtual void startEdit()
