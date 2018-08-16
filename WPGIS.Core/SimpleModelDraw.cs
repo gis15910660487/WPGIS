@@ -49,7 +49,7 @@ namespace WPGIS.Core
                 ModelSceneSymbol symbol = m_graphic.Symbol as ModelSceneSymbol;
                 if(symbol != null)
                 {
-                    symbol.Heading = (2 * Math.PI- m_rotOnXY) * 180 / Math.PI;
+                    symbol.Heading = m_rotOnXY * 180 / Math.PI;
                 }
             }
         }

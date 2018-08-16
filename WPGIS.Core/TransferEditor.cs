@@ -278,44 +278,32 @@ namespace WPGIS.Core
         {
             return m_rotOnXY;
         }
-        private void refreshGeometry(MapPoint pos, float scale, double angle)
+        private void refreshGeometry(MapPoint renderPos, float scale, double angle)
         {
-            MapPoint renderPos = new MapPoint(pos.X, pos.Y, pos.Z, pos.SpatialReference);
-
-            //先在原点位置计算放大后各轴终点的坐标
-            double newSize = CommonUtil.getInst().meter2degree(m_initSize * scale);
-            Vector3D xAxisPointEnd = new Vector3D(m_initSize * scale, 0, 0);
-            Vector3D yAxisPointEnd = new Vector3D(0, m_initSize * scale, 0);
-            Vector3D zAxisPointEnd = new Vector3D(0, 0, m_initSize * scale);
-            //然后继续在原点位置计算各轴终点旋转后的坐标
-            if (angle > 0)
-            {
-                xAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(xAxisPointEnd, angle);
-                yAxisPointEnd = CommonUtil.getInst().RotateAroundZAxis(yAxisPointEnd, angle);
-            }
-            //转经纬度            
-            double dXAxisPointEndX = CommonUtil.getInst().meter2degree(xAxisPointEnd.X);
-            double dXAxisPointEndY = CommonUtil.getInst().meter2degree(xAxisPointEnd.Y);
-            double dYAxisPointEndX = CommonUtil.getInst().meter2degree(yAxisPointEnd.X);
-            double dYAxisPointEndY = CommonUtil.getInst().meter2degree(yAxisPointEnd.Y);
-
-            //平移计算
-            var xAxisEndMapPoint = new MapPoint(renderPos.X + dXAxisPointEndX, renderPos.Y + dXAxisPointEndY, renderPos.Z + xAxisPointEnd.Z, renderPos.SpatialReference);
-            var yAxisEndMapPoint = new MapPoint(renderPos.X + dYAxisPointEndX, renderPos.Y + dYAxisPointEndY, renderPos.Z + yAxisPointEnd.Z, renderPos.SpatialReference);
+            //球面坐标系下按照一定的方向角平移计算获得x轴和y轴的终点位置
+            var pntCollection = new PointCollection(renderPos.SpatialReference) { renderPos };
+            var xAxisPointEndCol = GeometryEngine.MoveGeodetic(pntCollection, m_initSize * scale, LinearUnits.Meters, angle, AngularUnits.Radians, GeodeticCurveType.Geodesic);
+            var yAxisPointEndCol = GeometryEngine.MoveGeodetic(pntCollection, m_initSize * scale, LinearUnits.Meters, angle + Math.PI / 2, AngularUnits.Radians, GeodeticCurveType.Geodesic);
+            var xAxisEndMapPoint = xAxisPointEndCol[0];
+            var yAxisEndMapPoint = yAxisPointEndCol[0];
+            //计算z轴的终点位置
+            var zAxisPointEnd = new Vector3D(0, 0, m_initSize * scale);
             var zAxisEndMapPoint = new MapPoint(renderPos.X + zAxisPointEnd.X, renderPos.Y + zAxisPointEnd.Y, renderPos.Z + zAxisPointEnd.Z, renderPos.SpatialReference);
 
+            //放大中间的方块
             m_spereSymbol.Width = m_initSize * scale / 5;
             m_spereSymbol.Height = m_initSize * scale / 5;
             m_spereSymbol.Depth = m_initSize * scale / 5;
-            m_spereSymbol.Heading = (2 * Math.PI - angle) * 180 / Math.PI; ;
+            m_spereSymbol.Heading = angle * 180 / Math.PI; ;
             m_spereGraphic.Geometry = renderPos;
 
+            //更新x轴
             m_xAxiMarkGraphic.Geometry = xAxisEndMapPoint;
             m_xAxisGraphic.Geometry = new Polyline(new PointCollection(renderPos.SpatialReference) { renderPos, xAxisEndMapPoint });
-
+            //更新y轴
             m_yAxiMarkGraphic.Geometry = yAxisEndMapPoint;
             m_yAxisGraphic.Geometry = new Polyline(new PointCollection(renderPos.SpatialReference) { renderPos, yAxisEndMapPoint });
-
+            //更新z轴
             m_zAxiMarkGraphic.Geometry = zAxisEndMapPoint;
             m_zAxisGraphic.Geometry = new Polyline(new PointCollection(renderPos.SpatialReference) { renderPos, zAxisEndMapPoint });
         }
