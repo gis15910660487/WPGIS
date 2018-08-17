@@ -14,7 +14,9 @@ using System.Threading.Tasks;
 using WPGIS.DataType;
 using ScreenPoint = System.Windows.Point;
 using PointCollection = Esri.ArcGISRuntime.Geometry.PointCollection;
-
+using System.Windows;
+using System.Windows.Threading;
+using System.Threading;
 
 namespace WPGIS.Core
 {
@@ -29,8 +31,7 @@ namespace WPGIS.Core
         private Color m_zAxisColor;
         private Color m_activeColor;
         private Color m_focusColor;
-
-        bool m_isVisible = false;
+        private bool m_isVisible = false;
 
         public event MapPointChangedEventHandler MapPointChangedEvent = null;
         //编辑器位置
@@ -41,8 +42,8 @@ namespace WPGIS.Core
         private float m_scale = 1.0f;
         //初始化size(默认300)
         private float m_initSize = 300.0f;
-        //默认离地高度
-        private float m_relativeHeight = 30.0f;
+        //离地高度
+        private double m_relativeHeight = 0.0;
         //场景view               
         private SceneView m_sceneView = null;
         //编辑存储的要素层
@@ -81,7 +82,12 @@ namespace WPGIS.Core
         //移动开始位置
         private ScreenPoint m_moveBeginPoint;
         //移动增量
-        Vector3D m_moveDelta;
+        private Vector3D m_moveDelta;
+        //移动编辑器的贴地模式
+        private SurfacePlacement m_surfacePlacement = SurfacePlacement.Absolute;
+        //是否可以穿到地底
+        private bool m_isCanUnderGroud = false;
+
 
         public TransferEditor(SceneView sceView)
         {
@@ -94,7 +100,7 @@ namespace WPGIS.Core
             m_focusColor = Color.FromArgb(200, 255, 255, 0);
 
             initEditor();
-            visible = false;            
+            visible = false;
 
             m_sceneView.MouseLeftButtonDown += sceneView_MouseLeftButtonDown;
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
@@ -102,20 +108,40 @@ namespace WPGIS.Core
             m_sceneView.ViewpointChanged += OnViewpointChanged;
         }
 
-        private void OnViewpointChanged(object sender, EventArgs e)
+        /// <summary>
+        /// 设置贴地模式
+        /// </summary>
+        /// <param name="placement">贴地模式</param>
+        public async void setSurfacePlacement(SurfacePlacement placement)
         {
-            ResizeScaleFromCamera();
+            m_surfacePlacement = placement;
+            if (m_surfacePlacement == SurfacePlacement.Relative)
+            {
+                if (!m_pos.IsEqual(new MapPoint(0.0, 0.0, 0.0, SpatialReferences.Wgs84)))
+                {
+                    double dEvevation = await m_sceneView.Scene.BaseSurface.GetElevationAsync(m_pos);
+                    m_relativeHeight = m_pos.Z - dEvevation;
+                }
+            }
         }
 
-        private void ResizeScaleFromCamera()
+        /// <summary>
+        /// 获取相对高度
+        /// </summary>
+        /// <returns>相对高度</returns>
+        public async Task<double> getRelativeHeight()
         {
-            var camera = m_sceneView.Camera;
-            MapPoint cameraPnt = new MapPoint(camera.Location.X, camera.Location.Y, camera.Location.Z, m_pos.SpatialReference);
-            var horDist = GeometryEngine.DistanceGeodetic(cameraPnt, m_pos, LinearUnits.Meters, AngularUnits.Degrees, GeodeticCurveType.Geodesic);
-            var dist = Math.Sqrt(Math.Pow(horDist.Distance, 2) + Math.Pow(camera.Location.Z - m_pos.Z, 2));
-            m_scale = (float)dist / 10000;
-            if (m_scale < 1.0f) m_scale = 1.0f;
-            refreshGeometry(m_pos, m_scale, m_rotOnXY);
+            double dEvevation = await m_sceneView.Scene.BaseSurface.GetElevationAsync(m_pos);
+            return m_pos.Z - dEvevation;
+        }
+
+        /// <summary>
+        /// 是否可以穿地
+        /// </summary>
+        public bool CanUnderGroud
+        {
+            get { return m_isCanUnderGroud; }
+            set { m_isCanUnderGroud = value; }
         }
 
         /// <summary>
@@ -162,7 +188,7 @@ namespace WPGIS.Core
                 Depth = m_initSize / 5,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            var location = new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84);
+            var location = new MapPoint(0, 0, 0, SpatialReferences.Wgs84);
             m_spereGraphic = new Graphic(location, m_spereSymbol);
             m_gpOverlayAxis.Graphics.Add(m_spereGraphic);
 
@@ -176,8 +202,8 @@ namespace WPGIS.Core
             //初始化x轴            
             PointCollection pointsX = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, m_relativeHeight),
-                    new MapPoint(agreeScale, 0, m_relativeHeight),
+                    new MapPoint(0, 0, 0),
+                    new MapPoint(agreeScale, 0, 0),
                 };
             Polyline polylineXAxis = new Polyline(pointsX);
             m_xAxisGraphic = new Graphic(polylineXAxis, m_xAxisSymbol);
@@ -193,14 +219,14 @@ namespace WPGIS.Core
                 Depth = 10,
                 AnchorPosition = SceneSymbolAnchorPosition.Bottom
             };
-            m_xAxiMarkGraphic = new Graphic(new MapPoint(agreeScale, 0, m_relativeHeight), m_xAxisMarkSymbol);
+            m_xAxiMarkGraphic = new Graphic(new MapPoint(agreeScale, 0, 0), m_xAxisMarkSymbol);
             m_gpOverlayMark.Graphics.Add(m_xAxiMarkGraphic);
 
             //初始化y轴            
             PointCollection pointsY = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, m_relativeHeight, SpatialReferences.Wgs84),
-                    new MapPoint(0, agreeScale, m_relativeHeight, SpatialReferences.Wgs84),
+                    new MapPoint(0, 0, 0, SpatialReferences.Wgs84),
+                    new MapPoint(0, agreeScale, 0, SpatialReferences.Wgs84),
                 };
             Polyline polylineYAxis = new Polyline(pointsY);
             m_yAxisGraphic = new Graphic(polylineYAxis, m_yAxisSymbol);
@@ -216,14 +242,14 @@ namespace WPGIS.Core
                 Depth = 10,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            m_yAxiMarkGraphic = new Graphic(new MapPoint(0, agreeScale, m_relativeHeight), m_yAxisMarkSymbol);
+            m_yAxiMarkGraphic = new Graphic(new MapPoint(0, agreeScale, 0), m_yAxisMarkSymbol);
             m_gpOverlayMark.Graphics.Add(m_yAxiMarkGraphic);
 
             //初始化z轴            
             PointCollection pointsZ = new PointCollection(SpatialReferences.Wgs84)
                 {
-                    new MapPoint(0, 0, m_relativeHeight),
-                    new MapPoint(0, 0, m_initSize + m_relativeHeight),
+                    new MapPoint(0, 0, 0),
+                    new MapPoint(0, 0, m_initSize + 0),
                 };
             Polyline polylineZAxis = new Polyline(pointsZ);
             m_zAxisGraphic = new Graphic(polylineZAxis, m_zAxisSymbol);
@@ -239,19 +265,80 @@ namespace WPGIS.Core
                 Depth = 10,
                 AnchorPosition = SceneSymbolAnchorPosition.Center
             };
-            m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_initSize + m_relativeHeight), m_zAxisMarkSymbol);
+            m_zAxiMarkGraphic = new Graphic(new MapPoint(0, 0, m_initSize + 0), m_zAxisMarkSymbol);
             m_gpOverlayMark.Graphics.Add(m_zAxiMarkGraphic);
         }
         /// <summary>
         /// 设置位置
         /// </summary>
         /// <param name="pos">地图位置点</param>
-        public void setPosition(MapPoint pos)
+        public async void setPosition(MapPoint pos)
         {
             if (m_pos.IsEqual(pos)) return;
-            m_pos = pos;
+            m_pos = await processPosition(pos);
             ResizeScaleFromCamera();
         }
+
+        private async Task<MapPoint> processPosition(MapPoint pos)
+        {
+            MapPoint retPnt = null;
+            double dEvevation = 0.0f;
+
+            try
+            {
+                dEvevation = await m_sceneView.Scene.BaseSurface.GetElevationAsync(pos);
+            }
+            catch (Exception ex)
+            {
+                return null;
+            }
+            finally
+            {
+                //先对穿地情况进行处理
+                if (m_isCanUnderGroud)
+                {
+                    retPnt = pos;
+                }
+                else
+                {
+                    retPnt = (pos.Z >= dEvevation) ? pos : new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
+                }
+
+                if (m_surfacePlacement == SurfacePlacement.Relative)
+                {
+                    if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
+                    {
+                        retPnt = new MapPoint(pos.X, pos.Y, dEvevation + m_relativeHeight, pos.SpatialReference);
+                    }
+                    else
+                    {
+                        //record relative height
+                        m_relativeHeight = retPnt.Z - dEvevation;
+                    }
+                }
+                else if (m_surfacePlacement == SurfacePlacement.Absolute)
+                {
+                    if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
+                    {
+                        if (m_pos.Z >= dEvevation)
+                        {
+                            retPnt = new MapPoint(pos.X, pos.Y, m_pos.Z, pos.SpatialReference);
+                        }
+                        else
+                        {
+                            retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
+                        }
+                    }
+                }
+                else if (m_surfacePlacement == SurfacePlacement.Draped)
+                {
+                    retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
+                }
+            }
+
+            return retPnt;
+        }
+
         /// <summary>
         /// 返回编辑器的地图位置
         /// </summary>
@@ -337,7 +424,7 @@ namespace WPGIS.Core
             {
                 pRetGraphic = identifyResults.Graphics[0];
             }
-            else if(identifyResults.Graphics.Count > 1)
+            else if (identifyResults.Graphics.Count > 1)
             {
                 pRetGraphic = m_spereGraphic;
             }
@@ -360,25 +447,29 @@ namespace WPGIS.Core
                 m_yAxisSymbol.Color = m_activeColor;
                 m_yAxisMarkSymbol.Color = m_activeColor;
             }
-            else if (hitGraphic == m_zAxisGraphic)
-            {
-                m_zAxisSymbol.Color = m_activeColor;
-                m_zAxisMarkSymbol.Color = m_activeColor;
-            }
             else if (hitGraphic == m_spereGraphic)
             {
                 m_spereSymbol.Color = m_activeColor;
             }
+            else if (hitGraphic == m_zAxisGraphic && m_surfacePlacement != SurfacePlacement.Draped)
+            {
+                m_zAxisSymbol.Color = m_activeColor;
+                m_zAxisMarkSymbol.Color = m_activeColor;
+            }
         }
 
-        private void moveTo(MapPoint hintMapPnt)
+        private async void moveTo(MapPoint hintMapPnt)
         {
             //更新位置
-            m_pos = hintMapPnt;
-            //重绘
-            refreshGeometry(m_pos, m_scale, m_rotOnXY);
-            //触发位置改变事件
-            MapPointChangedEvent?.Invoke(m_pos);
+            var pos = await processPosition(hintMapPnt);
+            if (pos != null)
+            {
+                m_pos = pos;
+                refreshGeometry(m_pos, m_scale, m_rotOnXY);
+                //触发位置改变事件
+                MapPointChangedEvent?.Invoke(m_pos);
+            }
+
         }
 
         /// <summary>
@@ -386,7 +477,7 @@ namespace WPGIS.Core
         /// </summary>
         /// <param name="hintPnt">屏幕点击位置</param>
         /// <param name="pGrahic">轴</param>
-        private void moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
+        private async void moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
         {
             Polyline tline = pGrahic.Geometry as Polyline;
             MapPoint mapBeginPnt = tline.Parts[0].Points[0];
@@ -415,11 +506,16 @@ namespace WPGIS.Core
             //计算出移动的向量增量
             m_moveDelta = mapVec.Normalize() * Math.Abs(moveLength);
             //更新位置并重绘
-            m_pos = new MapPoint(m_pos.X + m_moveDelta.X, m_pos.Y + m_moveDelta.Y, m_pos.Z + m_moveDelta.Z, m_pos.SpatialReference);
-            refreshGeometry(m_pos, m_scale, m_rotOnXY);
+            var pos = new MapPoint(m_pos.X + m_moveDelta.X, m_pos.Y + m_moveDelta.Y, m_pos.Z + m_moveDelta.Z, m_pos.SpatialReference);
+            var tProcessedPos = await processPosition(pos);
 
-            //触发位置改变事件
-            MapPointChangedEvent?.Invoke(m_pos);
+            if(tProcessedPos != null)
+            {
+                m_pos = tProcessedPos;
+                refreshGeometry(m_pos, m_scale, m_rotOnXY);
+                //触发位置改变事件
+                MapPointChangedEvent?.Invoke(m_pos);
+            }           
 
             m_moveBeginPoint = hintPnt;
         }
@@ -427,6 +523,7 @@ namespace WPGIS.Core
         private void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (!m_isVisible || m_sceneView == null) return;
+                        
             if (m_currentAxisType == Axis_Type.Axis_None)
             {
                 //激活坐标轴
@@ -434,29 +531,36 @@ namespace WPGIS.Core
             }
             else
             {
-                //移动坐标轴
-                ScreenPoint hintPnt = e.GetPosition(m_sceneView);
-                if (m_currentAxisType == Axis_Type.Axis_X)
+                Console.WriteLine("-------- enter sceneView_MouseMove ------\n");
+                lock (this)
                 {
-                    moveByAxis(hintPnt, m_xAxisGraphic);
-                }
-                else if (m_currentAxisType == Axis_Type.Axis_Y)
-                {
-                    moveByAxis(hintPnt, m_yAxisGraphic);
-                }
-                else if (m_currentAxisType == Axis_Type.Axis_Z)
-                {
-                    moveByAxis(hintPnt, m_zAxisGraphic);
-                }
-                else if (m_currentAxisType == Axis_Type.Axis_XYZ)
-                {
-                    MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
-                    if (mPnt != null)
+                    Console.WriteLine("--------enter move by axis ------\n");
+                    //移动坐标轴
+                    ScreenPoint hintPnt = e.GetPosition(m_sceneView);
+                    if (m_currentAxisType == Axis_Type.Axis_X)
                     {
-                        moveTo(mPnt);
+                        moveByAxis(hintPnt, m_xAxisGraphic);
                     }
+                    else if (m_currentAxisType == Axis_Type.Axis_Y)
+                    {
+                        moveByAxis(hintPnt, m_yAxisGraphic);
+                    }
+                    else if (m_currentAxisType == Axis_Type.Axis_Z)
+                    {
+                        moveByAxis(hintPnt, m_zAxisGraphic);
+                    }
+                    else if (m_currentAxisType == Axis_Type.Axis_XYZ)
+                    {
+                        MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
+                        if (mPnt != null)
+                        {
+                            moveTo(mPnt);
+                        }
+                    }
+                    Console.WriteLine("--------leave move by axis ------\n");
                 }
-            }
+                Console.WriteLine("-------- leave sceneView_MouseMove ------\n");
+            }            
         }
         private void sceneView_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
@@ -481,10 +585,10 @@ namespace WPGIS.Core
         private async void sceneView_MouseLeftButtonDown(object sender, System.Windows.Input.MouseButtonEventArgs e)
         {
             if (!m_isVisible || m_sceneView == null) return;
-          
+
             ScreenPoint hintPnt = e.GetPosition(m_sceneView);
             Graphic hitGraphic = await IdentifyAxis(hintPnt);
-            if(hitGraphic != null)
+            if (hitGraphic != null)
             {
                 //停止鼠标对三维场景的控制
                 m_sceneView.InteractionOptions.IsEnabled = false;
@@ -502,18 +606,37 @@ namespace WPGIS.Core
                     m_yAxisMarkSymbol.Color = m_focusColor;
                     m_currentAxisType = Axis_Type.Axis_Y;
                 }
-                else if (hitGraphic == m_zAxisGraphic)
-                {
-                    m_zAxisSymbol.Color = m_focusColor;
-                    m_zAxisMarkSymbol.Color = m_focusColor;
-                    m_currentAxisType = Axis_Type.Axis_Z;
-                }
                 else if (hitGraphic == m_spereGraphic)
                 {
                     m_spereSymbol.Color = m_focusColor;
                     m_currentAxisType = Axis_Type.Axis_XYZ;
                 }
+                else if (hitGraphic == m_zAxisGraphic && m_surfacePlacement != SurfacePlacement.Draped)
+                {
+                    m_zAxisSymbol.Color = m_focusColor;
+                    m_zAxisMarkSymbol.Color = m_focusColor;
+                    m_currentAxisType = Axis_Type.Axis_Z;
+                }
             }
+        }
+
+        private void OnViewpointChanged(object sender, EventArgs e)
+        {
+            if (m_isVisible)
+            {
+                ResizeScaleFromCamera();
+            }
+        }
+
+        private void ResizeScaleFromCamera()
+        {
+            var camera = m_sceneView.Camera;
+            MapPoint cameraPnt = new MapPoint(camera.Location.X, camera.Location.Y, camera.Location.Z, m_pos.SpatialReference);
+            var horDist = GeometryEngine.DistanceGeodetic(cameraPnt, m_pos, LinearUnits.Meters, AngularUnits.Degrees, GeodeticCurveType.Geodesic);
+            var dist = Math.Sqrt(Math.Pow(horDist.Distance, 2) + Math.Pow(camera.Location.Z - m_pos.Z, 2));
+            m_scale = (float)dist / 10000;
+            if (m_scale < 1.0f) m_scale = 1.0f;
+            refreshGeometry(m_pos, m_scale, m_rotOnXY);
         }
 
         public void Dispose()
@@ -524,17 +647,17 @@ namespace WPGIS.Core
             m_sceneView.PreviewMouseMove -= sceneView_MouseMove;
             m_sceneView.ViewpointChanged -= OnViewpointChanged;
 
-            if(m_gpOverlayAxis != null)
+            if (m_gpOverlayAxis != null)
             {
                 m_sceneView.GraphicsOverlays.Remove(m_gpOverlayAxis);
                 m_gpOverlayAxis = null;
             }
-            
-            if(m_gpOverlayMark != null)
+
+            if (m_gpOverlayMark != null)
             {
                 m_sceneView.GraphicsOverlays.Remove(m_gpOverlayMark);
                 m_gpOverlayMark = null;
-            }            
+            }
         }
     }
 }
