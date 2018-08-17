@@ -8,15 +8,15 @@ using Esri.ArcGISRuntime.UI.Controls;
 
 using Mathlib;
 using System;
+using System.Windows;
+using System.Threading;
 using System.Windows.Media;
 using System.Threading.Tasks;
+using System.Windows.Threading;
 
 using WPGIS.DataType;
 using ScreenPoint = System.Windows.Point;
 using PointCollection = Esri.ArcGISRuntime.Geometry.PointCollection;
-using System.Windows;
-using System.Windows.Threading;
-using System.Threading;
 
 namespace WPGIS.Core
 {
@@ -88,6 +88,10 @@ namespace WPGIS.Core
         //是否可以穿到地底
         private bool m_isCanUnderGroud = false;
 
+        //移动位置缓冲区
+        PointCollection m_preMovePointCollection = new PointCollection(SpatialReferences.Wgs84);
+        //计算处理时间计时器
+        System.Windows.Forms.Timer m_processTimer = new System.Windows.Forms.Timer();
 
         public TransferEditor(SceneView sceView)
         {
@@ -106,6 +110,43 @@ namespace WPGIS.Core
             m_sceneView.MouseLeftButtonUp += sceneView_MouseLeftButtonUp;
             m_sceneView.PreviewMouseMove += sceneView_MouseMove;
             m_sceneView.ViewpointChanged += OnViewpointChanged;
+
+            m_processTimer.Interval = 1;
+            m_processTimer.Enabled = false;
+            m_processTimer.Tick += ProcessTimer_Tick;
+            m_processTimer.Start();
+        }
+
+        private bool m_isProcessing = false;
+        private async void ProcessTimer_Tick(object sender, EventArgs e)
+        {
+            if (m_isProcessing) return;
+            m_isProcessing = true;
+
+            MapPoint processPnt = null;
+            lock (m_preMovePointCollection)
+            {
+                if (m_preMovePointCollection.Count > 0)
+                {
+                    processPnt = m_preMovePointCollection[0];
+                    m_preMovePointCollection.RemoveAt(0);
+                }
+            }
+
+            if (processPnt != null)
+            {
+                //处理逻辑
+                var tProcessedPos = await processPosition(processPnt);
+                if (tProcessedPos != null)
+                {
+                    m_pos = tProcessedPos;
+                    refreshGeometry(m_pos, m_scale, m_rotOnXY);
+                    //触发位置改变事件
+                    MapPointChangedEvent?.Invoke(m_pos);
+                }
+            }
+
+            m_isProcessing = false;
         }
 
         /// <summary>
@@ -463,18 +504,22 @@ namespace WPGIS.Core
             }
         }
 
-        private async Task<bool> moveTo(MapPoint hintMapPnt)
+        private void moveTo(MapPoint hintMapPnt)
         {
-            //更新位置
-            var pos = await processPosition(hintMapPnt);
-            if (pos != null)
+            lock (m_preMovePointCollection)
             {
-                m_pos = pos;
-                refreshGeometry(m_pos, m_scale, m_rotOnXY);
-                //触发位置改变事件
-                MapPointChangedEvent?.Invoke(m_pos);
+                if (m_preMovePointCollection.Count < 10)
+                {
+                    m_preMovePointCollection.Add(hintMapPnt);
+                }
+                else
+                {
+                    Random tRan = new Random();
+                    int iRandomValue = tRan.Next(3, 7);
+                    m_preMovePointCollection.RemoveAt(iRandomValue);
+                    m_preMovePointCollection.Add(hintMapPnt);
+                }
             }
-            return true;
         }
 
         /// <summary>
@@ -482,7 +527,7 @@ namespace WPGIS.Core
         /// </summary>
         /// <param name="hintPnt">屏幕点击位置</param>
         /// <param name="pGrahic">轴</param>
-        private async Task<bool> moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
+        private void moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
         {
             Polyline tline = pGrahic.Geometry as Polyline;
             MapPoint mapBeginPnt = tline.Parts[0].Points[0];
@@ -492,10 +537,10 @@ namespace WPGIS.Core
 
             //移动的二维向量
             Vector2D vecMove = new Vector2D(hintPnt.X - m_moveBeginPoint.X, hintPnt.Y - m_moveBeginPoint.Y);
-            //x轴在屏幕上的二维向量
+            //轴在屏幕上的二维向量
             Vector2D vecAxis = new Vector2D(scEndPnt.X - scBeginPnt.X, scEndPnt.Y - scBeginPnt.Y);
             double dotValue = vecMove.Dot(vecAxis);
-            if (Math.Abs(dotValue) < 0.000001) return false;
+            if (Math.Abs(dotValue) < 0.000001) return;
 
             Vector2D vecMoveProject = vecAxis * (vecAxis.Dot(vecMove) / vecAxis.MagnitudeSquared);
             //移动比例
@@ -512,22 +557,25 @@ namespace WPGIS.Core
             m_moveDelta = mapVec.Normalize() * Math.Abs(moveLength);
             //更新位置并重绘
             var pos = new MapPoint(m_pos.X + m_moveDelta.X, m_pos.Y + m_moveDelta.Y, m_pos.Z + m_moveDelta.Z, m_pos.SpatialReference);
-            var tProcessedPos = await processPosition(pos);
-
-            if(tProcessedPos != null)
+            lock(m_preMovePointCollection)
             {
-                m_pos = tProcessedPos;
-                refreshGeometry(m_pos, m_scale, m_rotOnXY);
-                //触发位置改变事件
-                MapPointChangedEvent?.Invoke(m_pos);
-            }           
+                if (m_preMovePointCollection.Count < 50)
+                {
+                    m_preMovePointCollection.Add(pos);
+                }
+                else
+                {
+                    Random tRan = new Random();
+                    int iRandomValue = tRan.Next(10, 40);
+                    m_preMovePointCollection.RemoveAt(iRandomValue);
+                    m_preMovePointCollection.Add(pos);
+                }
+            }     
 
             m_moveBeginPoint = hintPnt;
-            return true;
         }
-
-        private bool m_isMoveing = false;
-        private async void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        
+        private void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (!m_isVisible || m_sceneView == null) return;
                         
@@ -538,33 +586,30 @@ namespace WPGIS.Core
             }
             else
             {
-                if (m_isMoveing) return;
-                m_isMoveing = true;
                 //Console.WriteLine("-------- enter sceneView_MouseMove ------\n");                
                 //移动坐标轴
                 ScreenPoint hintPnt = e.GetPosition(m_sceneView);
                 if (m_currentAxisType == Axis_Type.Axis_X)
                 {
-                    await moveByAxis(hintPnt, m_xAxisGraphic);
+                    moveByAxis(hintPnt, m_xAxisGraphic);
                 }
                 else if (m_currentAxisType == Axis_Type.Axis_Y)
                 {
-                    await moveByAxis(hintPnt, m_yAxisGraphic);
+                    moveByAxis(hintPnt, m_yAxisGraphic);
                 }
                 else if (m_currentAxisType == Axis_Type.Axis_Z)
                 {
-                    await moveByAxis(hintPnt, m_zAxisGraphic);
+                    moveByAxis(hintPnt, m_zAxisGraphic);
                 }
                 else if (m_currentAxisType == Axis_Type.Axis_XYZ)
                 {
                     MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
                     if (mPnt != null)
                     {
-                        await moveTo(mPnt);
+                        moveTo(mPnt);
                     }
                 }               
-                //Console.WriteLine("-------- leave sceneView_MouseMove ------\n");
-                m_isMoveing = false;
+                //Console.WriteLine("-------- leave sceneView_MouseMove ------\n");               
             }            
         }
         private void sceneView_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
