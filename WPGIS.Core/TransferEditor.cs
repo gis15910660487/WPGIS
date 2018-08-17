@@ -79,15 +79,19 @@ namespace WPGIS.Core
         private SimpleLineSymbol m_zAxisSymbol = null;
         //当前选中坐标轴类型
         private Axis_Type m_currentAxisType = Axis_Type.Axis_None;
-        //移动开始位置
+        //移动开始屏幕位置
         private ScreenPoint m_moveBeginPoint;
+        //移动开始编辑器位置
+        private MapPoint m_moveBeginPos = null;
         //移动增量
         private Vector3D m_moveDelta;
         //移动编辑器的贴地模式
         private SurfacePlacement m_surfacePlacement = SurfacePlacement.Absolute;
         //是否可以穿到地底
         private bool m_isCanUnderGroud = false;
-
+        
+        //随机器
+        Random m_random = new Random();
         //移动位置缓冲区
         PointCollection m_preMovePointCollection = new PointCollection(SpatialReferences.Wgs84);
         //计算处理时间计时器
@@ -556,23 +560,23 @@ namespace WPGIS.Core
             //计算出移动的向量增量
             m_moveDelta = mapVec.Normalize() * Math.Abs(moveLength);
             //更新位置并重绘
-            var pos = new MapPoint(m_pos.X + m_moveDelta.X, m_pos.Y + m_moveDelta.Y, m_pos.Z + m_moveDelta.Z, m_pos.SpatialReference);
+            var pos = new MapPoint(m_moveBeginPos.X + m_moveDelta.X, m_moveBeginPos.Y + m_moveDelta.Y, m_moveBeginPos.Z + m_moveDelta.Z, m_pos.SpatialReference);
             lock(m_preMovePointCollection)
             {
-                if (m_preMovePointCollection.Count < 50)
+                if (m_preMovePointCollection.Count < 10)
                 {
                     m_preMovePointCollection.Add(pos);
                 }
                 else
-                {
-                    Random tRan = new Random();
-                    int iRandomValue = tRan.Next(10, 40);
+                {                    
+                    int iRandomValue = m_random.Next(3, 7);
                     m_preMovePointCollection.RemoveAt(iRandomValue);
                     m_preMovePointCollection.Add(pos);
                 }
             }     
 
             m_moveBeginPoint = hintPnt;
+            m_moveBeginPos = pos;
         }
         
         private void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
@@ -643,6 +647,7 @@ namespace WPGIS.Core
                 //停止鼠标对三维场景的控制
                 m_sceneView.InteractionOptions.IsEnabled = false;
                 m_moveBeginPoint = hintPnt;
+                m_moveBeginPos = m_pos;
 
                 if (hitGraphic == m_xAxisGraphic)
                 {
