@@ -292,48 +292,46 @@ namespace WPGIS.Core
             {
                 return null;
             }
-            finally
+
+            //先对穿地情况进行处理
+            if (m_isCanUnderGroud)
             {
-                //先对穿地情况进行处理
-                if (m_isCanUnderGroud)
+                retPnt = pos;
+            }
+            else
+            {
+                retPnt = (pos.Z >= dEvevation) ? pos : new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
+            }
+
+            if (m_surfacePlacement == SurfacePlacement.Relative)
+            {
+                if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
                 {
-                    retPnt = pos;
+                    retPnt = new MapPoint(pos.X, pos.Y, dEvevation + m_relativeHeight, pos.SpatialReference);
                 }
                 else
                 {
-                    retPnt = (pos.Z >= dEvevation) ? pos : new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
+                    //record relative height
+                    m_relativeHeight = retPnt.Z - dEvevation;
                 }
-
-                if (m_surfacePlacement == SurfacePlacement.Relative)
+            }
+            else if (m_surfacePlacement == SurfacePlacement.Absolute)
+            {
+                if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
                 {
-                    if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
+                    if (m_pos.Z >= dEvevation)
                     {
-                        retPnt = new MapPoint(pos.X, pos.Y, dEvevation + m_relativeHeight, pos.SpatialReference);
+                        retPnt = new MapPoint(pos.X, pos.Y, m_pos.Z, pos.SpatialReference);
                     }
                     else
                     {
-                        //record relative height
-                        m_relativeHeight = retPnt.Z - dEvevation;
+                        retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
                     }
                 }
-                else if (m_surfacePlacement == SurfacePlacement.Absolute)
-                {
-                    if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
-                    {
-                        if (m_pos.Z >= dEvevation)
-                        {
-                            retPnt = new MapPoint(pos.X, pos.Y, m_pos.Z, pos.SpatialReference);
-                        }
-                        else
-                        {
-                            retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
-                        }
-                    }
-                }
-                else if (m_surfacePlacement == SurfacePlacement.Draped)
-                {
-                    retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
-                }
+            }
+            else if (m_surfacePlacement == SurfacePlacement.Draped)
+            {
+                retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
             }
 
             return retPnt;
@@ -449,12 +447,20 @@ namespace WPGIS.Core
             }
             else if (hitGraphic == m_spereGraphic)
             {
-                m_spereSymbol.Color = m_activeColor;
+                //只有在Draped模式下可用
+                if(m_surfacePlacement == SurfacePlacement.Draped)
+                {
+                    m_spereSymbol.Color = m_activeColor;
+                }                
             }
-            else if (hitGraphic == m_zAxisGraphic && m_surfacePlacement != SurfacePlacement.Draped)
+            else if (hitGraphic == m_zAxisGraphic)
             {
-                m_zAxisSymbol.Color = m_activeColor;
-                m_zAxisMarkSymbol.Color = m_activeColor;
+                //除了Draped其他模式可用
+                if (m_surfacePlacement != SurfacePlacement.Draped)
+                {
+                    m_zAxisSymbol.Color = m_activeColor;
+                    m_zAxisMarkSymbol.Color = m_activeColor;
+                }
             }
         }
 
@@ -608,14 +614,22 @@ namespace WPGIS.Core
                 }
                 else if (hitGraphic == m_spereGraphic)
                 {
-                    m_spereSymbol.Color = m_focusColor;
-                    m_currentAxisType = Axis_Type.Axis_XYZ;
+                    //只有在Draped模式下可用
+                    if (m_surfacePlacement == SurfacePlacement.Draped)
+                    {
+                        m_spereSymbol.Color = m_focusColor;
+                        m_currentAxisType = Axis_Type.Axis_XYZ;
+                    }                   
                 }
-                else if (hitGraphic == m_zAxisGraphic && m_surfacePlacement != SurfacePlacement.Draped)
+                else if (hitGraphic == m_zAxisGraphic)
                 {
-                    m_zAxisSymbol.Color = m_focusColor;
-                    m_zAxisMarkSymbol.Color = m_focusColor;
-                    m_currentAxisType = Axis_Type.Axis_Z;
+                    //除了Draped其他模式可用
+                    if (m_surfacePlacement != SurfacePlacement.Draped)
+                    {
+                        m_zAxisSymbol.Color = m_focusColor;
+                        m_zAxisMarkSymbol.Color = m_focusColor;
+                        m_currentAxisType = Axis_Type.Axis_Z;
+                    }                    
                 }
             }
         }
