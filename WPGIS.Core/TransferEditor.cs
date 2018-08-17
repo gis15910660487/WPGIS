@@ -286,10 +286,13 @@ namespace WPGIS.Core
 
             try
             {
+                //Console.WriteLine("----------Enter GetElevationAsync-----------\n");
                 dEvevation = await m_sceneView.Scene.BaseSurface.GetElevationAsync(pos);
+                //Console.WriteLine("----------Leave GetElevationAsync-----------\n");
             }
             catch (Exception ex)
             {
+                //Console.WriteLine("----------Catch GetElevationAsync-----------\n");
                 return null;
             }
 
@@ -307,7 +310,7 @@ namespace WPGIS.Core
             {
                 if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
                 {
-                    retPnt = new MapPoint(pos.X, pos.Y, dEvevation + m_relativeHeight, pos.SpatialReference);
+                    GeometryEngine.SetZ(retPnt,dEvevation + m_relativeHeight);
                 }
                 else
                 {
@@ -319,19 +322,15 @@ namespace WPGIS.Core
             {
                 if (m_currentAxisType == Axis_Type.Axis_X || m_currentAxisType == Axis_Type.Axis_Y || m_currentAxisType == Axis_Type.Axis_XYZ)
                 {
-                    if (m_pos.Z >= dEvevation)
+                    if (m_pos.Z < dEvevation)
                     {
-                        retPnt = new MapPoint(pos.X, pos.Y, m_pos.Z, pos.SpatialReference);
-                    }
-                    else
-                    {
-                        retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
+                        GeometryEngine.SetZ(retPnt, dEvevation);
                     }
                 }
             }
             else if (m_surfacePlacement == SurfacePlacement.Draped)
             {
-                retPnt = new MapPoint(pos.X, pos.Y, dEvevation, pos.SpatialReference);
+                GeometryEngine.SetZ(retPnt, dEvevation);
             }
 
             return retPnt;
@@ -464,7 +463,7 @@ namespace WPGIS.Core
             }
         }
 
-        private async void moveTo(MapPoint hintMapPnt)
+        private async Task<bool> moveTo(MapPoint hintMapPnt)
         {
             //更新位置
             var pos = await processPosition(hintMapPnt);
@@ -475,7 +474,7 @@ namespace WPGIS.Core
                 //触发位置改变事件
                 MapPointChangedEvent?.Invoke(m_pos);
             }
-
+            return true;
         }
 
         /// <summary>
@@ -483,7 +482,7 @@ namespace WPGIS.Core
         /// </summary>
         /// <param name="hintPnt">屏幕点击位置</param>
         /// <param name="pGrahic">轴</param>
-        private async void moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
+        private async Task<bool> moveByAxis(ScreenPoint hintPnt, Graphic pGrahic)
         {
             Polyline tline = pGrahic.Geometry as Polyline;
             MapPoint mapBeginPnt = tline.Parts[0].Points[0];
@@ -496,7 +495,7 @@ namespace WPGIS.Core
             //x轴在屏幕上的二维向量
             Vector2D vecAxis = new Vector2D(scEndPnt.X - scBeginPnt.X, scEndPnt.Y - scBeginPnt.Y);
             double dotValue = vecMove.Dot(vecAxis);
-            if (Math.Abs(dotValue) < 0.000001) return;
+            if (Math.Abs(dotValue) < 0.000001) return false;
 
             Vector2D vecMoveProject = vecAxis * (vecAxis.Dot(vecMove) / vecAxis.MagnitudeSquared);
             //移动比例
@@ -524,9 +523,11 @@ namespace WPGIS.Core
             }           
 
             m_moveBeginPoint = hintPnt;
+            return true;
         }
 
-        private void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
+        private bool m_isMoveing = false;
+        private async void sceneView_MouseMove(object sender, System.Windows.Input.MouseEventArgs e)
         {
             if (!m_isVisible || m_sceneView == null) return;
                         
@@ -537,35 +538,33 @@ namespace WPGIS.Core
             }
             else
             {
-                Console.WriteLine("-------- enter sceneView_MouseMove ------\n");
-                lock (this)
+                if (m_isMoveing) return;
+                m_isMoveing = true;
+                //Console.WriteLine("-------- enter sceneView_MouseMove ------\n");                
+                //移动坐标轴
+                ScreenPoint hintPnt = e.GetPosition(m_sceneView);
+                if (m_currentAxisType == Axis_Type.Axis_X)
                 {
-                    Console.WriteLine("--------enter move by axis ------\n");
-                    //移动坐标轴
-                    ScreenPoint hintPnt = e.GetPosition(m_sceneView);
-                    if (m_currentAxisType == Axis_Type.Axis_X)
-                    {
-                        moveByAxis(hintPnt, m_xAxisGraphic);
-                    }
-                    else if (m_currentAxisType == Axis_Type.Axis_Y)
-                    {
-                        moveByAxis(hintPnt, m_yAxisGraphic);
-                    }
-                    else if (m_currentAxisType == Axis_Type.Axis_Z)
-                    {
-                        moveByAxis(hintPnt, m_zAxisGraphic);
-                    }
-                    else if (m_currentAxisType == Axis_Type.Axis_XYZ)
-                    {
-                        MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
-                        if (mPnt != null)
-                        {
-                            moveTo(mPnt);
-                        }
-                    }
-                    Console.WriteLine("--------leave move by axis ------\n");
+                    await moveByAxis(hintPnt, m_xAxisGraphic);
                 }
-                Console.WriteLine("-------- leave sceneView_MouseMove ------\n");
+                else if (m_currentAxisType == Axis_Type.Axis_Y)
+                {
+                    await moveByAxis(hintPnt, m_yAxisGraphic);
+                }
+                else if (m_currentAxisType == Axis_Type.Axis_Z)
+                {
+                    await moveByAxis(hintPnt, m_zAxisGraphic);
+                }
+                else if (m_currentAxisType == Axis_Type.Axis_XYZ)
+                {
+                    MapPoint mPnt = m_sceneView.ScreenToBaseSurface(hintPnt);
+                    if (mPnt != null)
+                    {
+                        await moveTo(mPnt);
+                    }
+                }               
+                //Console.WriteLine("-------- leave sceneView_MouseMove ------\n");
+                m_isMoveing = false;
             }            
         }
         private void sceneView_MouseLeftButtonUp(object sender, System.Windows.Input.MouseButtonEventArgs e)
