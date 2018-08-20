@@ -512,15 +512,14 @@ namespace WPGIS.Core
         {
             lock (m_preMovePointCollection)
             {
-                if (m_preMovePointCollection.Count < 10)
+                if (m_preMovePointCollection.Count < 20)
                 {
                     m_preMovePointCollection.Add(hintMapPnt);
                 }
                 else
                 {
-                    Random tRan = new Random();
-                    int iRandomValue = tRan.Next(3, 7);
-                    m_preMovePointCollection.RemoveAt(iRandomValue);
+                    int iRemoveIndex = m_random.Next(1, 18);
+                    m_preMovePointCollection.RemoveAt(iRemoveIndex);
                     m_preMovePointCollection.Add(hintMapPnt);
                 }
             }
@@ -622,6 +621,11 @@ namespace WPGIS.Core
             {
                 if (!m_isVisible || m_sceneView == null) return;
                 if (m_currentAxisType == Axis_Type.Axis_None) return;
+
+                lock(m_preMovePointCollection)
+                {
+                    m_preMovePointCollection.Clear();
+                }
 
                 //恢复选中坐标轴的颜色
                 resetAxisColor();
